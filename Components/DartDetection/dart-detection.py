@@ -5,7 +5,29 @@ import cv2
 import numpy as np
 
 
-def preprocess_image(img_a, img_b):
+def calc_image_difference(img_a, img_b):
+    """Calculates the difference between 2 images and creates a new image which contains the difference.
+
+    Parameters
+    ----------
+    img_a: array
+        image of a dartboard with a dart stuck in it
+    img_b: array
+        image of an empty dart board
+
+    Returns
+    -------
+    array
+        grayA: The grayscale image of img_a.
+    array
+        grayB: The grayscale image of img_b.
+    array
+        thresh: The diff img processed with a threshold and smoothed afterwards.
+    array
+        diff: The full SSIM image multiplied by 255 to create the difference img.
+    float
+        ssim_score: a score which tells you how identical the images are (1 = identical)
+    """
     # convert the images to grayscale
     grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
     grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
@@ -27,6 +49,22 @@ def preprocess_image(img_a, img_b):
 
 
 def calc_ssim(img_a, img_b):
+    """Calculate the difference between 2 images.
+
+    Parameters
+    ----------
+    img_a: array
+        image of a dartboard with a dart stuck in it
+    img_b: array
+        image of an empty dart board
+
+    Returns
+    -------
+    array
+        diff: The full SSIM image multiplied by 255 to create the difference img.
+    float
+        score: a score which tells you how identical the images are (1 = identical)
+    """
     # compute the Structural Similarity Index (SSIM) between the two images, can later be used to detect if a dart
     # has been thrown or not
     (score, diff) = compare_ssim(img_a, img_b, full=True)
@@ -35,6 +73,20 @@ def calc_ssim(img_a, img_b):
 
 
 def get_dart_contour(img):
+    """Calculate the contours of the biggest shape in the img.
+
+    Parameters
+    ----------
+    img: array
+        diff img processed with a threshold and smoothed afterwards.
+
+    Returns
+    -------
+    array
+        dart_contour: An array with all the points in the detected dart contour
+    array
+        dart_contour_points: An array with 2 points which define the bounding box of the detected dart.
+    """
     # find contours in img
     cnts = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
@@ -51,34 +103,65 @@ def get_dart_contour(img):
     return dart_contour, dart_contour_points
 
 
-def calc_object_lines(contour):
+def calc_object_lines(contour, offset):
+    """Calculates a line which goes through the center of the detected dart.
+
+    Parameters
+    ----------
+    contour: array
+        An array with all the points in the detected dart contour.
+    offset:
+        Max y value in the images
+
+    Returns
+    -------
+    float
+        x: x value of intersection point line1 and line2.
+    float
+        y: y value of intersection point line1 and line2.
+    float
+        slope: slope of line1
+    tuple
+        p_line_r: p1 which defines line1
+    tuple
+        p_line_l: p2 which defines line1
+    """
     # calc line through the object (line1)
     vx, vy, x, y = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
 
-    # calc line2. This line is orthogonal to line1 and divides the dart in half.
-    nx, ny = 1, -vx / vy
-    mag = np.sqrt((1 + ny ** 2))
-    vx1, vy1 = nx / mag, ny / mag
-
     # calc two points on line1
     fit_line_l = int((-x * vy / vx) + y)
-    fit_line_r = int(((grayA.shape[1] - x) * vy / vx) + y)
-    ort_line_l = int((-x * vy1 / vx1) + y)
-    ort_line_r = int(((grayA.shape[1] - x) * vy1 / vx1) + y)
+    fit_line_r = int(((offset - x) * vy / vx) + y)
 
     # calc 2 points on line2
-    p_line_r = (grayA.shape[1] - 1, fit_line_r)
+    p_line_r = (offset - 1, fit_line_r)
     p_line_l = (0, fit_line_l)
-    p_ort_line_r = (grayA.shape[1] - 1, ort_line_r)
-    p_ort_line_l = (0, ort_line_l)
 
     # calc slope of line through dart
     slope = (p_line_l[1] - p_line_r[1]) / (p_line_l[0] - p_line_r[0])
 
-    return x, y, slope, p_line_r, p_line_l, p_ort_line_r, p_ort_line_l
+    return x, y, slope, p_line_r, p_line_l
 
 
 def calc_bounding_box_intersection(a, b, p, slope):
+    """Calculate the intersection of a line (defined by p and slope) and the bounding box (defined by a and b)
+
+    Parameters
+    ----------
+    a: tuple
+        left lower corner of the bounding box.
+    b: tuple
+        right higher corner of the bounding box.
+    p: tuple
+        point one the line.
+    slope: float
+        slope of the line which goes through p.
+
+    Returns
+    -------
+    array
+        new_points: An array with the 2 points which intersect the bounding box.
+    """
     new_points = []
     offset = p[1][0] - (slope * p[0][0])
 
@@ -105,50 +188,83 @@ def calc_bounding_box_intersection(a, b, p, slope):
     return new_points
 
 
-def choose_dart_tip(contour, dart_tips, point_1, point_2):
-    points_underneath_line = 0
-    points_over_line = 0
+def choose_dart_tip(contour, point_1, point_2):
+    """Calculate which of the two possible dart_tip locations is correct.
 
-    # check if pixel in contour is over or underneath the line defined by point_1 and point_2
+    Parameters
+    ----------
+    contour: array
+        An array with all the points in the detected dart contour.
+    point_1: tuple
+        1. possible point for the dart tip
+    point_2: tuple
+        2. possible point for the dart tip
+
+    Returns
+    -------
+    array
+        p: the point of the arrow tip.
+    """
+    mean_dist_p1 = 0
+    mean_dist_p2 = 0
+
+    # calc mean dist from p in countour to point_1 and point_2
     for p in contour:
-        # check if point is underneath and add counter
-        if np.cross(p - np.array(point_1), np.array(point_2) - np.array(point_1)) < 0:
-            points_underneath_line = points_underneath_line + 1
-        else:
-            points_over_line = points_over_line + 1
+        mean_dist_p1 += ((((p[0][0] - point_1[0]) ** 2) + ((p[0][1] - point_1[1]) ** 2)) ** 0.5)
+        mean_dist_p2 += ((((p[0][0] - point_2[0]) ** 2) + ((p[0][1] - point_2[1]) ** 2)) ** 0.5)
+    mean_dist_p1 = mean_dist_p1 / contour.shape[0]
+    mean_dist_p2 = mean_dist_p2 / contour.shape[0]
 
-    # check which one of our two points is the dart-tip.
-    for p in dart_tips:
-        if points_underneath_line > points_over_line and np.cross(p - np.array(point_1),
-                                                                  np.array(point_2) - np.array(
-                                                                          point_1)) > 0:
-            return p
-        elif points_underneath_line <= points_over_line and np.cross(p - np.array(point_1),
-                                                                     np.array(point_2) - np.array(
-                                                                             point_1)) <= 0:
-            return p
-        else:
-            print("Error no Point found!")
-            return None
+    # print("mean_dist_p1: " + str(mean_dist_p1))
+    # print("mean_dist_p2: " + str(mean_dist_p2))
 
-def calc_dart_tip():
-    return
+    # pick point with the higher mean_dist as tip.
+    if mean_dist_p1 > mean_dist_p2:
+        return point_1
+    else:
+        return point_2
+
+def process_images(image_a, image_b):
+    """Calculates the difference of 2 images and calculates where the tip of a thrown dart is located.
+
+    Parameters
+    ----------
+    image_a: array
+        image of a dartboard
+    image_a: array
+        reference image of a dartboard. used to detect changes
+
+    Returns
+    -------
+    float
+        score_ssim: a score which tells you how identical the images are (1 = identical)
+    tuple
+        result: a point which tells you where the tip of the dart is located.
+    tuple
+        dart_contour_points: a tuple which contains 2 points. These points define the bounding box around the dart.
+    """
+    gray_a, gray_b, thresh, diff, score_ssim = calc_image_difference(image_a, image_b)
+    dart_contour, dart_contour_points = get_dart_contour(thresh)
+    x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
+    points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
+    result = choose_dart_tip(dart_contour, points[0], point[1])
+    return score_ssim, result, dart_contour_points
 
 
 # main class for testing
 if __name__ == "__main__":
     mode = 0
 
-    if mode == 0:
-        print("Test in Mode1:")
+    # load the two input images
+    imageA = cv2.imread("Rechts-dart.jpg")
+    imageB = cv2.imread("Rechts-empty.jpg")
 
-        # load the two input images
-        imageA = cv2.imread("Rechts-dart.jpg")
-        imageB = cv2.imread("Rechts-empty.jpg")
+    if mode == 0:
+        print("Test functions:")
 
         # preprocess image
-        grayA, grayB, thresh, diff, score_ssim = preprocess_image(imageA, imageB)
-        print("SSIM: {}".format(score_ssim))
+        grayA, grayB, thresh, diff, score_ssim = calc_image_difference(imageA, imageB)
+        print("SSIM: " + str(score_ssim))
 
         # get contour of dart from image
         dart_contour, dart_contour_points = get_dart_contour(thresh)
@@ -159,17 +275,16 @@ if __name__ == "__main__":
 
         # calc 2 lines: 1. through the object (x, y, slope, p_line_r, p_line_l)
         # and a 2. line orthogonal through the object p_ort_line_r, p_ort_line_l
-        x, y, slope, p_line_r, p_line_l, p_ort_line_r, p_ort_line_l = calc_object_lines(dart_contour)
+        x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, grayA.shape[1])
 
         # draw these lines
         cv2.line(imageA, p_line_r, p_line_l, 255, 2)
-        cv2.line(imageA, p_ort_line_r, p_ort_line_l, 255, 2)
 
         # calc intersection points between the bounding box and line through the object.
         points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
 
         # Choose the point which is the tip of the dart
-        result = choose_dart_tip(dart_contour, points, p_ort_line_l, p_ort_line_r)
+        result = choose_dart_tip(dart_contour, points[0], points[1])
 
         # draw intersection points green
         for point in points:
@@ -187,8 +302,14 @@ if __name__ == "__main__":
         cv2.waitKey(0)
 
     if mode == 1:
-        print("Test in Mode 2:")
+        print("Test Wrapper function:")
 
-        # load the two input images
-        imageA = cv2.imread("Rechts-dart.jpg")
-        imageB = cv2.imread("Rechts-empty.jpg")
+        # wrapper function
+        score_ssim, result, dart_contour_points = process_images(imageA, imageB)
+
+        # draw result
+        print("SSIM: " + str(score_ssim))
+        cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+        cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
+        cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
+        cv2.waitKey(0)
