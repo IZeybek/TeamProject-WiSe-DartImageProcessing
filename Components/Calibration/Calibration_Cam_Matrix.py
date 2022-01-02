@@ -1,8 +1,8 @@
 import cv2 
 import numpy as np
-from Classes import *
+import math
 from VideoCapture import VideoStream
-
+from Utils import *
 
 DEBUG = False
 
@@ -11,13 +11,8 @@ def findEllipse(edged, image_proc_img):
     Ellipse = EllipseDef()
 
     contours, _ =  cv2.findContours(edged, 1, 2)
-
-
-    ## contourArea threshold important -> make accessible
-    
-    cv2.drawContours(image_proc_img, contours, -1, (0, 255, 0), 3)
-    cv2.imshow("counturs-all", image_proc_img)
-    
+    #cv2.drawContours(image_proc_img, contours, -1, (0, 255, 0), 3)
+    #cv2.imshow("counturs-all", image_proc_img)
     minThresE = 80000
     maxThresE = 150000
     for cnt in contours:
@@ -38,12 +33,19 @@ def findEllipse(edged, image_proc_img):
                 #cv2.imshow("counturs-adasdasd", image_proc_img)
                 
                 center_ellipse = (x, y)
-
+                
                 a = a / 2
                 b = b / 2
-
+                # array = np.ones((800,800), np.uint8)
+                # cv2.ellipse(array, (int(x), int(y)), (int(3), int(3)), int(angle), 0.0, 360.0,
+                #             (255, 0, 0), 3)
+                # cv2.ellipse(array, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
+                #             (255, 0, 0), 3)
+                # cv2.imshow("array", array)
                 cv2.ellipse(image_proc_img, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
                             (255, 0, 0), 3)
+                cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), 3)
+  
                 cv2.imshow("ellipse", image_proc_img)
                 test=1+1
                 Ellipse.a = a
@@ -54,10 +56,94 @@ def findEllipse(edged, image_proc_img):
         # corrupted file
         except:
             continue
-            return Ellipse, image_proc_img
 
-    
     return Ellipse, image_proc_img
+
+def ellipse2circle(Ellipse):
+    """Ellipse to circle transformation
+    
+    http://math.stackexchange.com/questions/619037/circle-affine-transformation
+    
+    - moves the ellipse-center to the origin
+
+    - rotates the ellipse clockwise about the origin by angle θ
+      so that the major axis lines up with the x-axis.
+
+    - scales the y-axis up so that it's as fat in y as in x
+
+    - rotates counterclockwise by θ
+
+    - translates the ellipse-center back to where it used to be. 
+    
+    parameter:
+        Ellipse (Ellipse.data): [information about the ellipse]
+
+    Returns:
+        [np.array]: returns the transformation matrix.
+    """
+    
+    angle = (Ellipse.angle) * math.pi / 180
+    x = Ellipse.x
+    y = Ellipse.y
+    a = Ellipse.a
+    b = Ellipse.b
+
+    # build transformation matrix http://math.stackexchange.com/questions/619037/circle-affine-transformation
+    R1 = np.array([[ math.cos(angle), math.sin(angle), 0], 
+                   [-math.sin(angle), math.cos(angle), 0], 
+                   [               0,               0, 1]])
+    R2 = np.array([[math.cos(angle), -math.sin(angle), 0], 
+                   [math.sin(angle),  math.cos(angle), 0], 
+                   [              0,                0, 1]])
+
+    T1 = np.array([[1, 0, -x], 
+                   [0, 1, -y], 
+                   [0, 0,  1]])
+    T2 = np.array([[1, 0,  x], 
+                   [0, 1,  y], 
+                   [0, 0,  1]])
+
+    D = np.array([[1, 0, 0], [0, a / b, 0], [0, 0, 1]])
+
+    ellipseToCircleTransformationMatrix = T2.dot(R2.dot(D.dot(R1.dot(T1))))
+
+    return ellipseToCircleTransformationMatrix
+
+def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
+
+    # fit line to find intersec point for dartboard center point
+    lines = cv2.HoughLines(edged, 1, np.pi / 80, 100, 100)
+
+    intersectLines = []
+    intersectLines_XY_coord = []
+    ## sector angles important -> make accessible
+    for line in lines:
+        # rho, theta = line[0]
+        rho, theta = line[0]
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        x1 = int(x0 + 2000 * (-b))
+        y1 = int(y0 + 2000 * (a))
+        x2 = int(x0 - 2000 * (-b))
+        y2 = int(y0 - 2000 * (a))
+        if theta > np.pi / 180 * angleZone1[0] and theta < np.pi / 180 * angleZone1[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)
+            intersectLines.append(line[0]);
+            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+        elif theta > np.pi / 180 * angleZone2[0] and theta < np.pi / 180 * angleZone2[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)
+            intersectLines.append(line[0]);
+            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+    
+    if len(intersectLines) == 2:
+        x, y = intersection(intersectLines[0], intersectLines[1])
+    else:
+        x, y = segmented_intersections(intersectLines)    
+
+    cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), 3)
+    return intersectLines_XY_coord, image_proc_img
 
 def locateRedSpots(img):
 
@@ -131,6 +217,16 @@ def initTransformationMatrix(image_proc_img, mount):
     
     # find enclosing ellipse
     Ellipse, image_proc_img = findEllipse(inv_edge, image_proc_img)
+    
+    angleZone1 = (Ellipse.angle - 5, Ellipse.angle + 5)
+    angleZone2 = (Ellipse.angle + 80, Ellipse.angle + 100)
+    lines, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
+
+        
+    e2c_matrix = ellipse2circle(Ellipse)
+    cv2.imshow("test4", image_proc_img)
+    image_proc_img = cv2.warpPerspective(image_proc_img, e2c_matrix, (800, 800)) 
+    cv2.imshow("ellipseToCircleTransform-manipulation", image_proc_img)    
 
 def calibrate(cam_R, cam_L):
 #------------------------------------------
@@ -152,32 +248,25 @@ def calibrate(cam_R, cam_L):
     
     snapshot_cam_R = cam_R.copy()
     snapshot_cam_L = cam_L.copy()
-    imCal_R = cam_R.copy() #snapshot_cam_R.copy()
-    imCal_L = cam_L.copy() #snapshot_cam_L.copy()
+    imCal_R = cam_R.copy()
+    imCal_L = cam_L.copy()
 
     imCalRGBorig = cam_R.copy()
 
 #------------------------------------------
-    cv2.imwrite("cam_R.jpg", snapshot_cam_R)     # save calibration frame
-    #cv2.imwrite("cam_R_L.jpg", imCalRGB_L)  # save calibration frame
+    cv2.imwrite("cam_R.jpg", snapshot_cam_R)
+    #cv2.imwrite("cam_R_L.jpg", imCalRGB_L)
 
     calData_R = CalibrationData()
     #calData_L = CalibrationData()
 
     imCal_R = snapshot_cam_R.copy()
-    #imCal_L = imCalRGB_L.copy()
+    #imCal_L = imCalRGB_L.copy() 
 
-    calData_R.points = initTransformationMatrix(imCal_R, "right")
-   
-    
+    initTransformationMatrix(imCal_R, "right")
 
-    print("The dartboard image has now been normalized.")
-    print("")
-
-    cv2.imshow('winName4', imCal_R)
     test = cv2.waitKey(0)
     if test == 13:
-        cv2.destroyWindow('winName4')
         cv2.destroyAllWindows()
    
     return calData_R #, calData_L
