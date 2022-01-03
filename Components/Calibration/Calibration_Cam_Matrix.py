@@ -3,7 +3,8 @@ import numpy as np
 import math
 from VideoCapture import VideoStream
 from Utils import *
-
+from sympy import *
+from ellipseToCircle import *
 DEBUG = False
 
 def findEllipse(edged, image_proc_img):
@@ -26,9 +27,10 @@ def findEllipse(edged, image_proc_img):
                 cv2.ellipse(test, ellipse, (255, 0, 0), 2)
                 
                 x, y = ellipse[0]
-                a, b = ellipse[1]
+                a, b = ellipse[1] 
                 angle = ellipse[2]
-                
+                a -= 5
+                b -= 22
                 #cv2.drawContours(image_proc_img, cnt, -1, (255, 0, 0), 10)
                 #cv2.imshow("counturs-adasdasd", image_proc_img)
                 
@@ -36,18 +38,12 @@ def findEllipse(edged, image_proc_img):
                 
                 a = a / 2
                 b = b / 2
-                # array = np.ones((800,800), np.uint8)
-                # cv2.ellipse(array, (int(x), int(y)), (int(3), int(3)), int(angle), 0.0, 360.0,
-                #             (255, 0, 0), 3)
-                # cv2.ellipse(array, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
-                #             (255, 0, 0), 3)
-                # cv2.imshow("array", array)
+
                 cv2.ellipse(image_proc_img, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
                             (255, 0, 0), 3)
                 cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), 3)
   
                 cv2.imshow("ellipse", image_proc_img)
-                test=1+1
                 Ellipse.a = a
                 Ellipse.b = b
                 Ellipse.x = x
@@ -58,56 +54,6 @@ def findEllipse(edged, image_proc_img):
             continue
 
     return Ellipse, image_proc_img
-
-def ellipse2circle(Ellipse):
-    """Ellipse to circle transformation
-    
-    http://math.stackexchange.com/questions/619037/circle-affine-transformation
-    
-    - moves the ellipse-center to the origin
-
-    - rotates the ellipse clockwise about the origin by angle θ
-      so that the major axis lines up with the x-axis.
-
-    - scales the y-axis up so that it's as fat in y as in x
-
-    - rotates counterclockwise by θ
-
-    - translates the ellipse-center back to where it used to be. 
-    
-    parameter:
-        Ellipse (Ellipse.data): [information about the ellipse]
-
-    Returns:
-        [np.array]: returns the transformation matrix.
-    """
-    
-    angle = (Ellipse.angle) * math.pi / 180
-    x = Ellipse.x
-    y = Ellipse.y
-    a = Ellipse.a
-    b = Ellipse.b
-
-    # build transformation matrix http://math.stackexchange.com/questions/619037/circle-affine-transformation
-    R1 = np.array([[ math.cos(angle), math.sin(angle), 0], 
-                   [-math.sin(angle), math.cos(angle), 0], 
-                   [               0,               0, 1]])
-    R2 = np.array([[math.cos(angle), -math.sin(angle), 0], 
-                   [math.sin(angle),  math.cos(angle), 0], 
-                   [              0,                0, 1]])
-
-    T1 = np.array([[1, 0, -x], 
-                   [0, 1, -y], 
-                   [0, 0,  1]])
-    T2 = np.array([[1, 0,  x], 
-                   [0, 1,  y], 
-                   [0, 0,  1]])
-
-    D = np.array([[1, 0, 0], [0, a / b, 0], [0, 0, 1]])
-
-    ellipseToCircleTransformationMatrix = T2.dot(R2.dot(D.dot(R1.dot(T1))))
-
-    return ellipseToCircleTransformationMatrix
 
 def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
 
@@ -194,7 +140,7 @@ def locateRedSpots(img):
     # cv2.imshow("result-OPEN", thresh2)
     test =2
     
-def initTransformationMatrix(image_proc_img, mount):
+def initTransformationMatrix(image_proc_img):
 
     blurred = cv2.GaussianBlur(image_proc_img, (3, 3), -1)
     gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
@@ -215,19 +161,23 @@ def initTransformationMatrix(image_proc_img, mount):
     inv_edge = cv2.morphologyEx(inv_edge, cv2.MORPH_DILATE, kernel)
     cv2.imshow("5-Dilate_edge", inv_edge)
     
-    # find enclosing ellipse
+    # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>
     Ellipse, image_proc_img = findEllipse(inv_edge, image_proc_img)
     
+    # TODO: optimize angleZones
     angleZone1 = (Ellipse.angle - 5, Ellipse.angle + 5)
     angleZone2 = (Ellipse.angle + 80, Ellipse.angle + 100)
-    lines, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
+    lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
+    
+    intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
-        
-    e2c_matrix = ellipse2circle(Ellipse)
-    cv2.imshow("test4", image_proc_img)
-    image_proc_img = cv2.warpPerspective(image_proc_img, e2c_matrix, (800, 800)) 
-    cv2.imshow("ellipseToCircleTransform-manipulation", image_proc_img)    
-
+    for points in intersectPoints:
+        cv2.circle(image_proc_img,  (int(points[0]), int(points[1])), 10, (0, 255, 255), -1)
+    
+    cv2.imshow("test_Intersect", image_proc_img)
+    
+    return intersectPoints
+    
 def calibrate(cam_R, cam_L):
 #------------------------------------------
     
@@ -247,12 +197,9 @@ def calibrate(cam_R, cam_L):
 #------------------------------------------
     
     snapshot_cam_R = cam_R.copy()
-    snapshot_cam_L = cam_L.copy()
-    imCal_R = cam_R.copy()
-    imCal_L = cam_L.copy()
-
-    imCalRGBorig = cam_R.copy()
-
+    # snapshot_cam_L = cam_L.copy()
+    snapshot_cam_R = cam_R.copy()
+    # snapshot_cam_L = cam_L.copy()
 #------------------------------------------
     cv2.imwrite("cam_R.jpg", snapshot_cam_R)
     #cv2.imwrite("cam_R_L.jpg", imCalRGB_L)
@@ -260,16 +207,16 @@ def calibrate(cam_R, cam_L):
     calData_R = CalibrationData()
     #calData_L = CalibrationData()
 
-    imCal_R = snapshot_cam_R.copy()
-    #imCal_L = imCalRGB_L.copy() 
-
-    initTransformationMatrix(imCal_R, "right")
-
+    original = snapshot_cam_R.copy()
+    calData_R.intersectPoints = initTransformationMatrix(snapshot_cam_R)
+    calData_R.destinationPoints = [10, 0, 5, 15] # [0, 5, 10, 15]
+    calData_R.transformation_matrix = getFinalTransformationMatrix(original, calData_R)
+    
     test = cv2.waitKey(0)
-    if test == 13:
+    if test == 3:
         cv2.destroyAllWindows()
    
-    return calData_R #, calData_L
+    return calData_R
 
 
 if __name__ == '__main__':
