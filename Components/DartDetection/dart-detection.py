@@ -4,7 +4,7 @@ import imutils
 import cv2
 import numpy as np
 from startCallibration import *
-from showDartLocation import *
+from dartLocation import *
 
 
 def calc_image_difference(image_a, image_b):
@@ -303,6 +303,10 @@ if __name__ == "__main__":
         cv2.imshow("Thresh", thresh)
         
         new_dart_coord = showLatestDartLocationOnBoard(transformed_image, result, cal_data)
+        game_point_result = detect_segment(new_dart_coord, cal_data)
+        cv2.putText(transformed_image, str(game_point_result), (int(new_dart_coord[0]),int(new_dart_coord[1])), cv2.FONT_HERSHEY_SIMPLEX, 
+                   2, (255, 0, 255), 4, cv2.LINE_AA)
+        cv2.imshow("player Points detected", transformed_image)
         cv2.waitKey(0)
 
     if mode == 1:
