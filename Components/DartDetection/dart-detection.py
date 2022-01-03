@@ -3,9 +3,11 @@ from skimage.metrics import structural_similarity as compare_ssim
 import imutils
 import cv2
 import numpy as np
+from startCallibration import *
+from showDartLocation import *
 
 
-def calc_image_difference(img_a, img_b):
+def calc_image_difference(image_a, image_b):
     """Calculates the difference between 2 images and creates a new image which contains the difference.
 
     Parameters
@@ -29,8 +31,8 @@ def calc_image_difference(img_a, img_b):
         ssim_score: a score which tells you how identical the images are (1 = identical)
     """
     # convert the images to grayscale
-    grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-    grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+    grayA = cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY)
+    grayB = cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY)
 
     # calc the difference between the two greyscale images to detect the thrown dart
     ssim_score, diff = calc_ssim(grayA, grayB)
@@ -256,12 +258,12 @@ if __name__ == "__main__":
     mode = 0
 
     # load the two input images
-    imageA = cv2.imread("Rechts-dart.jpg")
-    imageB = cv2.imread("Rechts-empty.jpg")
+    imageA = cv2.imread("Links-dart.jpg")
+    imageB = cv2.imread("Links-empty.jpg")
+    cal_data, transformed_image = getCalibration(imageA,imageA)
 
     if mode == 0:
         print("Test functions:")
-
         # preprocess image
         grayA, grayB, thresh, diff, score_ssim = calc_image_difference(imageA, imageB)
         print("SSIM: " + str(score_ssim))
@@ -295,10 +297,12 @@ if __name__ == "__main__":
         cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
 
         # show the output images
-        cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
-        cv2.imshow("Modified", cv2.resize(imageB, (1920, 1080)))
-        cv2.imshow("Diff", cv2.resize(diff, (1920, 1080)))
-        cv2.imshow("Thresh", cv2.resize(thresh, (1920, 1080)))
+        cv2.imshow("Original", imageA)
+        cv2.imshow("Modified",imageB)
+        cv2.imshow("Diff", diff)
+        cv2.imshow("Thresh", thresh)
+        
+        new_dart_coord = showLatestDartLocationOnBoard(transformed_image, result, cal_data)
         cv2.waitKey(0)
 
     if mode == 1:

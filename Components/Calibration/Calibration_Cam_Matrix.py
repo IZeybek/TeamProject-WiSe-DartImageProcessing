@@ -5,6 +5,7 @@ from VideoCapture import VideoStream
 from Utils import *
 from sympy import *
 from ellipseToCircle import *
+import pickle
 DEBUG = False
 
 def findEllipse(edged, image_proc_img):
@@ -12,10 +13,10 @@ def findEllipse(edged, image_proc_img):
     Ellipse = EllipseDef()
 
     contours, _ =  cv2.findContours(edged, 1, 2)
-    #cv2.drawContours(image_proc_img, contours, -1, (0, 255, 0), 3)
-    #cv2.imshow("counturs-all", image_proc_img)
+    # cv2.drawContours(image_proc_img, contours, -1, (0, 255, 0), 3)
+    # cv2.imshow("all-counturs", image_proc_img)
     minThresE = 80000
-    maxThresE = 150000
+    maxThresE = 100000
     for cnt in contours:
         print(cv2.contourArea(cnt));
         try:  # threshold critical, change on demand?
@@ -29,21 +30,18 @@ def findEllipse(edged, image_proc_img):
                 x, y = ellipse[0]
                 a, b = ellipse[1] 
                 angle = ellipse[2]
-                a -= 5
-                b -= 22
-                #cv2.drawContours(image_proc_img, cnt, -1, (255, 0, 0), 10)
-                #cv2.imshow("counturs-adasdasd", image_proc_img)
-                
-                center_ellipse = (x, y)
+                y += 5
+                # a -= 5
+                b -= 5
+                # cv2.drawContours(image_proc_img, cnt, -1, (255, 0, 0), 10)
                 
                 a = a / 2
                 b = b / 2
-
                 cv2.ellipse(image_proc_img, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
                             (255, 0, 0), 3)
                 cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), 3)
   
-                cv2.imshow("ellipse", image_proc_img)
+                cv2.imshow("sss", image_proc_img)
                 Ellipse.a = a
                 Ellipse.b = b
                 Ellipse.x = x
@@ -58,7 +56,7 @@ def findEllipse(edged, image_proc_img):
 def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
 
     # fit line to find intersec point for dartboard center point
-    lines = cv2.HoughLines(edged, 1, np.pi / 80, 100, 100)
+    lines = cv2.HoughLines(edged, 1, np.pi / 80, 105, 100)
 
     intersectLines = []
     intersectLines_XY_coord = []
@@ -75,7 +73,7 @@ def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
         x2 = int(x0 - 2000 * (-b))
         y2 = int(y0 - 2000 * (a))
         if theta > np.pi / 180 * angleZone1[0] and theta < np.pi / 180 * angleZone1[1]:
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)           
             intersectLines.append(line[0]);
             intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
         elif theta > np.pi / 180 * angleZone2[0] and theta < np.pi / 180 * angleZone2[1]:
@@ -83,12 +81,16 @@ def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
             intersectLines.append(line[0]);
             intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
     
-    if len(intersectLines) == 2:
-        x, y = intersection(intersectLines[0], intersectLines[1])
-    else:
-        x, y = segmented_intersections(intersectLines)    
+    # if len(intersectLines) == 2:
+    #     x, y = intersection(intersectLines[0], intersectLines[1])
+    # else:
+    #     x, y = segmented_intersections(intersectLines)    
 
-    cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), 3)
+    # cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), 3)
+    
+        
+    cv2.imshow("lines-detected", image_proc_img)
+    
     return intersectLines_XY_coord, image_proc_img
 
 def locateRedSpots(img):
@@ -148,7 +150,7 @@ def initTransformationMatrix(image_proc_img):
     cv2.imshow("1-gray", gray)
     
     # return the edged image
-    edged = cv2.Canny(gray, 245, 255)  # imCal
+    edged = cv2.Canny(gray, 100, 255)  # imCal
     cv2.imshow("autocanny", edged)
     ret, inv_edge = cv2.threshold(edged, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     cv2.imshow("2-inv_edge", inv_edge)
@@ -165,18 +167,13 @@ def initTransformationMatrix(image_proc_img):
     Ellipse, image_proc_img = findEllipse(inv_edge, image_proc_img)
     
     # TODO: optimize angleZones
-    angleZone1 = (Ellipse.angle - 5, Ellipse.angle + 5)
+    angleZone1 = (Ellipse.angle + 1 , Ellipse.angle + 5)
     angleZone2 = (Ellipse.angle + 80, Ellipse.angle + 100)
     lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
     
     intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
-    for points in intersectPoints:
-        cv2.circle(image_proc_img,  (int(points[0]), int(points[1])), 10, (0, 255, 255), -1)
-    
-    cv2.imshow("test_Intersect", image_proc_img)
-    
-    return intersectPoints
+    return intersectPoints, Ellipse
     
 def calibrate(cam_R, cam_L):
 #------------------------------------------
@@ -208,15 +205,28 @@ def calibrate(cam_R, cam_L):
     #calData_L = CalibrationData()
 
     original = snapshot_cam_R.copy()
-    calData_R.intersectPoints = initTransformationMatrix(snapshot_cam_R)
-    calData_R.destinationPoints = [10, 0, 5, 15] # [0, 5, 10, 15]
-    calData_R.transformation_matrix = getFinalTransformationMatrix(original, calData_R)
+    calData_R.intersectPoints, Ellipse = initTransformationMatrix(snapshot_cam_R)
+    
+    calData_R.ellipsecenter = (Ellipse.x, Ellipse.y)
+    calData_R.destinationPoints = [8, 18, 13, 3] # [0, 5, 10, 15]
+    test = cv2.waitKey(0)
+    if test == 3:
+        print("done")
+    calData_R.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData_R)
+    
+    test = cv2.waitKey(0)
+    if test == 9:
+        print("done")
+    #write the calibration data to a file
+    calFile = open("calibrationData_R.pkl", "wb")
+    pickle.dump(calData_R, calFile, 0)
+    calFile.close()
     
     test = cv2.waitKey(0)
     if test == 3:
         cv2.destroyAllWindows()
    
-    return calData_R
+    return calData_R, transformed_image
 
 
 if __name__ == '__main__':

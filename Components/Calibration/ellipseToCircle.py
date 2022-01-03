@@ -50,6 +50,10 @@ def getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img):
         transformed_intersectpoints.append(inter_p1)
         transformed_intersectpoints.append(inter_p2)
     
+    for points in transformed_intersectpoints:
+         cv2.circle(image_proc_img,  (int(points[0]), int(points[1])), 10, (0, 255, 255), -1)
+
+    cv2.imshow("intersection points", image_proc_img)
     return transformed_intersectpoints, image_proc_img
 
 
@@ -84,7 +88,7 @@ def getFinalTransformationMatrix(original_img, calData):
     
     cv2.imshow('transformed_image_final', normilzed_board_image)
 
-    return transformation_matrix
+    return transformation_matrix, normilzed_board_image
 
 def getSectorAngle(i, calData):
     return (0.5 + i) * calData.sectorangle
