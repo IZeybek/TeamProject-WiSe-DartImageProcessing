@@ -41,10 +41,10 @@
                    <div >
                      <h1>Welcome to Dart!</h1>
                    </div>
-                   <div>
+                   <v-row cols="12" sm="8" class="ma-2">
                      <h2>current player:</h2>
                      <h3>{{currentPlayer.name}}</h3>
-                   </div>
+                   </v-row>
                   <div  class="score">
                      <h2>PlayerScore:</h2>
                      <p>{{currentPlayer.score}}</p>
@@ -233,12 +233,17 @@ h3 {
 .score {
   margin-right: 10px;
 }
+.score {
+  background-color: #333;
+  border-radius: 5px;
+  text-align: center;
+  color: #fff;
+  
+}
 .score p {
   font-size: 300px;
   text-align: center;
-  background-color: #333;
-  border-radius: 5px;
-  color: #fff;
+  color: lightblue;
 }
 .player {
   background-color: #333;
