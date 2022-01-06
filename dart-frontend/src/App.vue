@@ -1,16 +1,12 @@
 <template>
-  <v-app id="inspire">
+  <v-app id="inspire" >
     <v-app-bar
       app
       color="white"
       flat
     >
-    <v-app-bar-title> Welcome to Dart!</v-app-bar-title>
+    <v-app-bar-title><div style="width: 200px;"> Welcome to Dart!</div></v-app-bar-title>
 
-
-      
-
-   
     </v-app-bar>
 
     <v-main class="grey lighten-3">

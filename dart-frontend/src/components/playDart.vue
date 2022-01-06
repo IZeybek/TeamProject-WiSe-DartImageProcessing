@@ -14,19 +14,32 @@
                   v-bind:key="player.name"
                   :class="{ active: turn === index, player }"
                 >
-                  <v-list-item-title>
-                    <h2>{{ player.name }}</h2></v-list-item-title
-                  >
-
-                  <v-list-item-subtitle>
-                    <h3>{{ player.score }}</h3>
-                  </v-list-item-subtitle>
                   <v-row cols="12" sm="8" class="ma-2">
+                    <div>
+                      <v-list-item-title>
+                        <h2>{{ player.name }}</h2></v-list-item-title
+                      >
+
+                      <v-list-item-subtitle>
+                        <h3>{{ player.score }}</h3>
+                      </v-list-item-subtitle>
+                      <v-row cols="12" sm="8" class="ma-2">
+                        <div
+                          v-for="(player, index) in players"
+                          v-bind:key="player.name"
+                          :class="{ active: turn === index, player }"
+                        ></div>
+                      </v-row>
+                    </div>
                     <div
-                      v-for="(player, index) in players"
-                      v-bind:key="player.name"
-                      :class="{ active: turn === index, player }"
-                    ></div>
+                      class="player justify-center"
+                      style="text-align: center"
+                      v-if="index == 0"
+                    >
+                      <h3 style="color: lightcoral; padding: 10px 0px 0px 0px">
+                        nextPlayer
+                      </h3>
+                    </div>
                   </v-row>
                 </div>
               </v-list-item-content>
@@ -34,25 +47,31 @@
           </div>
         </div>
         <div class="col-sm-8 col-12">
-          <div class="v-sheet theme--light rounded-lg" style="min-height: 70vh">
-            <div id="shootout">
-              <div class="ma-2 d-flex overflow-auto justify-center">
-                 <v-col cols="12" sm="8" class="ma-2">
-                   <div >
-                     <h1>Welcome to Dart!</h1>
-                   </div>
-                   <v-row cols="12" sm="8" class="ma-2">
-                     <h2>current player:</h2>
-                     <h3>{{currentPlayer.name}}</h3>
-                   </v-row>
-                  <div  class="score">
-                     <h2>PlayerScore:</h2>
-                     <p>{{currentPlayer.score}}</p>
-                   </div>
-                   <v-btn class="justify-center" @click="changePlayer()" small dark
-                  >next player</v-btn>
-                </v-col>
-              </div>
+          <div class="v-sheet theme--light rounded-lg" style="min-height: 50vh">
+            <div class="ma-2 d-flex overflow-auto justify-center">
+              <v-col cols="12" sm="8" class="ma-2 justify-center">
+                <div class="score">
+                  <v-list-item-title>
+                    <h2>{{ currentPlayer.name }}'s</h2></v-list-item-title
+                  >
+                  <v-list-item-subtitle>
+                    <h3>Score</h3>
+                  </v-list-item-subtitle>
+                  <div
+                    class="scorePoint"
+                    v-resize-text="{
+                      ratio: 0.3,
+                      minFontSize: '16px',
+                      maxFontSize: '400px',
+                    }"
+                  >
+                    {{ currentPlayer.score }}
+                  </div>
+                </div>
+                <div class="nextPlayer">
+                  <v-btn @click="changePlayer()" small dark>next player</v-btn>
+                </div>
+              </v-col>
             </div>
           </div>
         </div>
@@ -61,59 +80,34 @@
             class="v-sheet theme--light rounded-lg"
             style="min-height: 268px"
           >
-            <div class="head">
-              <div class="record">
-                <div
-                  @click="
-                    undo(correct);
-                    isHidden = false;
-                  "
-                >
-                  {{ record[0] | totext }}
+            <div
+              v-for="(item, index) in dartScores"
+              v-bind:key="index"
+              :style="{ padding: '5px', 'background-color': getTurn(index) }"
+            >
+              <v-row cols="1" sm="8" class="ma-2">
+                <div class="justify-center">
+                  <img
+                    src="../assets/dart.png"
+                    width="30"
+                    height="30"
+                    style="padding: 2px"
+                  />
                 </div>
                 <div
-                  @click="
-                    undo();
-                    isHidden = true;
-                  "
+                  v-if="item.score == 0"
+                  style="padding-left: 10px; margin-top: 2px; font-size: 20px"
                 >
-                  {{ record[1] | totext }}
+                  <v-icon>mdi-equal</v-icon>{{ item.score }}
                 </div>
-                <div
-                  @click="
-                    undo();
-                    isHidden = true;
-                  "
-                >
-                  {{ record[2] | totext }}
+                <div v-else style="padding-left: 8px">
+                  <v-icon>mdi-equal</v-icon>
                 </div>
-                
-              </div>
-              <v-btn
-                  @click="
-                    isHidden = true;
-                    debug();
-                  "
-                  >Failed</v-btn
-                >
-                <v-btn
-                  @click="
-                    isHidden = true;
-                    debug();
-                  "
-                >
-                  Correction</v-btn
-                >
-                <input
-                  v-if="isHidden"
-                  v-model="correct"
-                  placeholder="Richtige zahl eingeben"
-                />
-                <div>
-                <v-btn class="justify-center" @click="debug()" small dark
-                  >Calibration</v-btn
-                >
+              </v-row>
+              <v-divider></v-divider>
             </div>
+            <div class="head justify-center">
+              <v-btn @click="changePlayer()" small dark>done?</v-btn>
             </div>
           </div>
         </div>
@@ -123,9 +117,14 @@
 </template>
 
 <script>
+import ResizeText from "vue-resize-text";
+
 export default {
   name: "playDart",
   props: ["playernames", "initialSconre"],
+  directives: {
+    ResizeText,
+  },
   data: function () {
     return {
       record: [],
@@ -136,10 +135,11 @@ export default {
       playerCount: 0,
       connection: null,
       currentPlayer: {
-        name: 'player.name',
+        name: "player.name",
         score: 301,
         throws: [],
-      }
+      },
+      dartScores: [],
     };
   },
   filters: {
@@ -157,12 +157,32 @@ export default {
     // this.createWebsocket()
   },
   methods: {
+    getTurn(index) {
+      if (this.dartScores[index].score == 0) {
+        return "lightgreen";
+      } else {
+        return "tranparent";
+      }
+    },
     changePlayer() {
-      this.playerCount =  (this.playerCount + 1 ) %this.players.length;
-      this.currentPlayer = this.players[this.playerCount]
+      this.playerCount = (this.playerCount + 1) % this.players.length;
+      this.currentPlayer = this.players[this.playerCount];
     },
 
     init() {
+      const darts = [];
+      for (let i = 0; i < 3; i++) {
+        if (i == 0) {
+          darts.push({
+            score: 0,
+          });
+        } else {
+          darts.push({
+            score: -1,
+          });
+        }
+      }
+      this.dartScores = darts;
       this.players = this.playernames.map((player) => ({
         name: player.name,
         score: this.initialScore || 301,
@@ -202,9 +222,9 @@ export default {
 }
 .record {
   background-color: #333;
-  
 }
 h1 {
+  background-color: lightblue;
   text-align: center;
 }
 h2 {
@@ -234,19 +254,21 @@ h3 {
   margin: 0 0 5px 0;
 }
 .score {
-  margin-right: 10px;
-}
-.score {
   background-color: #333;
   border-radius: 5px;
   text-align: center;
   color: #fff;
-  
 }
-.score p {
+
+.nextPlayer {
+  padding-top: 20px;
+  text-align: center;
+}
+
+.scorePoint {
   font-size: 300px;
   text-align: center;
-  color: lightblue;
+  color: lightgreen;
 }
 .player {
   background-color: #333;
@@ -255,7 +277,5 @@ h3 {
   color: #fff;
   border-radius: 5px;
 }
-
-
 </style>
 

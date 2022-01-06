@@ -1,8 +1,10 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import VueResizeText from 'vue-resize-text';
 
 Vue.use(VueRouter)
+Vue.use(VueResizeText)
 
 const routes = [
   {
