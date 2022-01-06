@@ -7,67 +7,14 @@
             class="v-sheet theme--light rounded-lg"
             style="min-height: 268px"
           >
-            <v-list-item two-line>
-              <v-list-item-content class="justify-center">
-                <div
-                  v-for="(player, index) in players"
-                  v-bind:key="player.name"
-                  :class="{ active: turn === index, player }"
-                >
-                  <v-row cols="12" sm="8" class="ma-2">
-                    <div>
-                      <v-list-item-title>
-                        <h2>{{ player.name }}</h2></v-list-item-title
-                      >
-
-                      <v-list-item-subtitle>
-                        <h3>{{ player.score }}</h3>
-                      </v-list-item-subtitle>
-                      <v-row cols="12" sm="8" class="ma-2">
-                        <div
-                          v-for="(player, index) in players"
-                          v-bind:key="player.name"
-                          :class="{ active: turn === index, player }"
-                        ></div>
-                      </v-row>
-                    </div>
-                    <div
-                      class="player justify-center"
-                      style="text-align: center"
-                      v-if="index == 0"
-                    >
-                      <h3 style="color: lightcoral; padding: 10px 0px 0px 0px">
-                        nextPlayer
-                      </h3>
-                    </div>
-                  </v-row>
-                </div>
-              </v-list-item-content>
-            </v-list-item>
+            <player-list :players="players"></player-list>
           </div>
         </div>
         <div class="col-sm-8 col-12">
           <div class="v-sheet theme--light rounded-lg" style="min-height: 50vh">
             <div class="ma-2 d-flex overflow-auto justify-center">
               <v-col cols="12" sm="8" class="ma-2 justify-center">
-                <div class="score">
-                  <v-list-item-title>
-                    <h2>{{ currentPlayer.name }}'s</h2></v-list-item-title
-                  >
-                  <v-list-item-subtitle>
-                    <h3>Score</h3>
-                  </v-list-item-subtitle>
-                  <div
-                    class="scorePoint"
-                    v-resize-text="{
-                      ratio: 0.3,
-                      minFontSize: '16px',
-                      maxFontSize: '400px',
-                    }"
-                  >
-                    {{ currentPlayer.score }}
-                  </div>
-                </div>
+                <current-player :currentPlayer="currentPlayer"></current-player>
                 <div class="nextPlayer">
                   <v-btn @click="changePlayer()" small dark>next player</v-btn>
                 </div>
@@ -76,39 +23,9 @@
           </div>
         </div>
         <div class="col-sm-2 col-12">
-          <div
-            class="v-sheet theme--light rounded-lg"
-            style="min-height: 268px"
-          >
-            <div
-              v-for="(item, index) in dartScores"
-              v-bind:key="index"
-              :style="{ padding: '5px', 'background-color': getTurn(index) }"
-            >
-              <v-row cols="1" sm="8" class="ma-2">
-                <div class="justify-center">
-                  <img
-                    src="../assets/dart.png"
-                    width="30"
-                    height="30"
-                    style="padding: 2px"
-                  />
-                </div>
-                <div
-                  v-if="item.score == 0"
-                  style="padding-left: 10px; margin-top: 2px; font-size: 20px"
-                >
-                  <v-icon>mdi-equal</v-icon>{{ item.score }}
-                </div>
-                <div v-else style="padding-left: 8px">
-                  <v-icon>mdi-equal</v-icon>
-                </div>
-              </v-row>
-              <v-divider></v-divider>
-            </div>
-            <div class="head justify-center">
-              <v-btn @click="changePlayer()" small dark>done?</v-btn>
-            </div>
+          <dart-scorer :dartScores="dartScores"></dart-scorer>
+          <div class="head justify-center">
+            <v-btn @click="changePlayer()" small dark>done?</v-btn>
           </div>
         </div>
       </div>
@@ -118,10 +35,14 @@
 
 <script>
 import ResizeText from "vue-resize-text";
+import PlayerList from "./PlayerList.vue";
+import CurrentPlayer from "./CurrentPlayer.vue";
+import DartScorer from "./DartScorer.vue";
 
 export default {
   name: "playDart",
   props: ["playernames", "initialSconre"],
+  components: { PlayerList, CurrentPlayer, DartScorer },
   directives: {
     ResizeText,
   },
@@ -157,13 +78,6 @@ export default {
     // this.createWebsocket()
   },
   methods: {
-    getTurn(index) {
-      if (this.dartScores[index].score == 0) {
-        return "lightgreen";
-      } else {
-        return "tranparent";
-      }
-    },
     changePlayer() {
       this.playerCount = (this.playerCount + 1) % this.players.length;
       this.currentPlayer = this.players[this.playerCount];
