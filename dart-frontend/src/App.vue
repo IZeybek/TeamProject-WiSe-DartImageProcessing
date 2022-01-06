@@ -5,18 +5,12 @@
       color="white"
       flat
     >
-      <v-avatar
-        :color="$vuetify.breakpoint.smAndDown ? 'grey darken-1' : 'transparent'"
-        size="32"
-      ></v-avatar>
+    <v-app-bar-title> Welcome to Dart!</v-app-bar-title>
+
 
       
 
-      <v-avatar
-        class="hidden-sm-and-down"
-        color="grey darken-1 shrink"
-        size="32"
-      ></v-avatar>
+   
     </v-app-bar>
 
     <v-main class="grey lighten-3">

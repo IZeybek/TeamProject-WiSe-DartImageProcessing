@@ -63,19 +63,6 @@
           >
             <div class="head">
               <div class="record">
-                <v-btn
-                  @click="
-                    isHidden = true;
-                    debug();
-                  "
-                >
-                  Correction</v-btn
-                >
-                <input
-                  v-if="isHidden"
-                  v-model="correct"
-                  placeholder="Richtige zahl eingeben"
-                />
                 <div
                   @click="
                     undo(correct);
@@ -100,17 +87,33 @@
                 >
                   {{ record[2] | totext }}
                 </div>
-                <v-btn
+                
+              </div>
+              <v-btn
                   @click="
                     isHidden = true;
                     debug();
                   "
                   >Failed</v-btn
                 >
-                <v-btn class="justify-center" @click="startGame()" small dark
+                <v-btn
+                  @click="
+                    isHidden = true;
+                    debug();
+                  "
+                >
+                  Correction</v-btn
+                >
+                <input
+                  v-if="isHidden"
+                  v-model="correct"
+                  placeholder="Richtige zahl eingeben"
+                />
+                <div>
+                <v-btn class="justify-center" @click="debug()" small dark
                   >Calibration</v-btn
                 >
-              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -190,7 +193,7 @@ export default {
   display: grid;
   grid-template-columns: 2fr 1fr;
   place-items: center;
-  border: 5px solid black;
+  /*border: 5px solid black;*/
 }
 
 .players {
@@ -198,8 +201,8 @@ export default {
   color: white;
 }
 .record {
-  justify-self: end;
-  background-color: rgb(173, 28, 28);
+  background-color: #333;
+  
 }
 h1 {
   text-align: center;
@@ -252,44 +255,7 @@ h3 {
   color: #fff;
   border-radius: 5px;
 }
-.player.active:nth-child(1) {
-  background-color: red;
-}
-.player.active:nth-child(2) {
-  background-color: blue;
-}
-.player.active:nth-child(3) {
-  background-color: green;
-}
-.player.active:nth-child(4) {
-  background-color: purple;
-}
-.player.active:nth-child(5) {
-  background-color: rgb(28, 114, 110);
-}
 
-.playerchange,
-.gameover {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  font-weight: bold;
-  transform: translate(-50%, -50%);
-  background-color: rgb(189, 201, 87);
-  color: white;
-  font-size: 2rem;
-  padding: 30px;
-  cursor: pointer;
-}
-.gameover {
-  padding: 0;
-}
-.gameover > div {
-  padding: 30px;
-}
-.playagain {
-  background-color: rgb(45, 102, 19);
-}
+
 </style>
 
