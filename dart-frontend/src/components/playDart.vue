@@ -22,7 +22,7 @@
                   </div>
                 <!--current-player :currentPlayer="currentPlayer"></current-player-->
                 <div class="nextPlayer">
-                  <v-btn @click="changePlayer()" small dark>Calibration</v-btn>
+                  <v-btn @click="callibration()" small dark>Calibration</v-btn>
                 </div>
               </v-col>
             </div>
@@ -31,7 +31,7 @@
         <div class="col-sm-2 col-12">
           <dart-scorer :dartScores="dartScores"></dart-scorer>
           <div class="head justify-center">
-            <v-btn @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
           </div>
         </div>
       </div>
@@ -93,11 +93,17 @@ export default {
       //this.$root.$refs.PlayerList.popout(this.currentPlayer);
       let finalscore = this.$root.$refs.DartScorer.getScore_all_tries_together();
       this.calculateScore(finalscore)
-      this.playerCount = (this.playerCount + 4) % this.players.length;
-      this.currentPlayer = this.players[0];
-      let temp_player = this.currentPlayer
-      console.log("gechanged " +this.currentPlayer.name)
-      this.$root.$refs.PlayerList.popout(temp_player);
+      if(this.win) {
+        console.log("test")
+      } else {
+        this.currentPlayer = this.players[0];
+        let temp_player = this.currentPlayer
+        this.$root.$refs.PlayerList.popout(temp_player);
+      }
+      //this.playerCount = (this.playerCount + 4) % this.players.length;
+      //this.currentPlayer = this.players[0];
+      //let temp_player = this.currentPlayer
+      //this.$root.$refs.PlayerList.popout(temp_player);
     },
 
     init() {
@@ -134,6 +140,7 @@ export default {
       if(tmp_score > 0) {
         this.currentPlayer.score = tmp_score
       } else if(tmp_score == 0) {
+        this.currentPlayer.score = tmp_score
         this.win = true;
       } else {
         alert("try again")
@@ -144,6 +151,9 @@ export default {
       console.log(this.connection);
       this.connection.send("hello");
     },
+    callibration(){
+      console.log("Test")
+    }
   },
 };
 </script>
