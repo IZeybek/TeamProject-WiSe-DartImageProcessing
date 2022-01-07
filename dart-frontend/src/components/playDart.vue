@@ -75,12 +75,19 @@ export default {
   },
   created() {
     this.init();
+    this.currentPlayer = this.players[0]
+    let temp_player=this.players.shift()
+    this.players.push(temp_player)
     // this.createWebsocket()
   },
   methods: {
     changePlayer() {
-      this.playerCount = (this.playerCount + 1) % this.players.length;
-      this.currentPlayer = this.players[this.playerCount];
+      //this.$root.$refs.PlayerList.popout(this.currentPlayer);
+      this.playerCount = (this.playerCount + 4) % this.players.length;
+      this.currentPlayer = this.players[0];
+      let temp_player = this.currentPlayer
+      console.log("gechanged " +this.currentPlayer.name)
+      this.$root.$refs.PlayerList.popout(temp_player);
     },
 
     init() {

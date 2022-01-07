@@ -51,10 +51,21 @@ export default {
     return {};
   },
   created() {
+    this.$root.$refs.PlayerList = this;
     this.init();
     // this.createWebsocket()
   },
-  methods: {},
+  methods: {
+    popout(temp_player){ 
+      let playersList = this.players;
+      let temp1_player = playersList[0];
+      if(temp_player.name=playersList[0].name) {
+        playersList.shift();
+      }
+      playersList.push(temp1_player)
+      this.players = playersList
+    },
+  },
 };
 </script>
 

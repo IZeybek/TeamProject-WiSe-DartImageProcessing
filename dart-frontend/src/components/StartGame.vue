@@ -78,7 +78,7 @@ export default Vue.extend({
     playDart,
   },
   data: () => ({
-    player_count: 2,
+    player_count: 5,
     game: 0,
     players: [],
     gamestarted: false,
