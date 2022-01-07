@@ -32,6 +32,7 @@
           <dart-scorer :dartScores="dartScores"></dart-scorer>
           <div class="head justify-center">
             <v-btn v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="win" @click="init()" small dark>newGame?</v-btn>
           </div>
         </div>
       </div>
@@ -121,6 +122,7 @@ export default {
         // }
       }
       this.dartScores = darts;
+      this.win=false;
       this.players = this.playernames.map((player) => ({
         name: player.name,
         score: this.initialScore || 301,
