@@ -1,19 +1,16 @@
 <template>
-  <v-app id="inspire" >
-    <v-app-bar
-      app
-      color="white"
-      flat
-    >
-    <v-app-bar-title><div style="width: 200px;"> Welcome to Dart!</div></v-app-bar-title>
-
+  <v-app id="inspire">
+    <v-app-bar app color="white" flat>
+      <v-spacer />
+      <v-app-bar-title
+        ><div style="width: 200px">Welcome to Dart!</div></v-app-bar-title
+      >
+      <v-spacer />
     </v-app-bar>
 
     <v-main class="grey lighten-3">
       <router-view></router-view>
-      <v-container>
-        
-      </v-container>
+      <v-container> </v-container>
     </v-main>
   </v-app>
 </template>
