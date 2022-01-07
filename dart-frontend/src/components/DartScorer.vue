@@ -32,8 +32,9 @@
           />
       </v-row>
       <v-text-field v-show="showInput"
+                    type="number"
                     class="mt-n6"
-                    v-model="corrected"
+                    v-model.number="corrected"
                     placeholder="enter text"
                     v-on:keyup.enter="onEnter(index)"
                   ></v-text-field>
@@ -51,7 +52,7 @@ export default {
     return {
       showPencil:false,
       showInput:false,
-      corrected:0,
+      corrected: 0,
     };
   },
   created() {
@@ -80,7 +81,7 @@ export default {
     getScore_all_tries_together(){
       let finaladditonScore = 0;
       for(let i= 0;i<this.dartScores.length;i++) {
-        finaladditonScore+=this.dartScores[i].score
+        finaladditonScore=finaladditonScore+this.dartScores[i].score
       }
       return finaladditonScore
     },

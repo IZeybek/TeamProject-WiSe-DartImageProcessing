@@ -56,7 +56,7 @@ export default {
   data: function () {
     return {
       record: [],
-      win: true,
+      win: false,
       serverscore: 0,
       isHidden: false,
       players: [],
@@ -130,10 +130,10 @@ export default {
     },
     calculateScore(finalscore){
       let tmp_score = this.currentPlayer.score;
-      tmp_score= tmp_score - finalscore;
+      tmp_score = tmp_score - finalscore;
       if(tmp_score > 0) {
         this.currentPlayer.score = tmp_score
-      } else if(tmp_score ==0) {
+      } else if(tmp_score == 0) {
         this.win = true;
       } else {
         alert("try again")
