@@ -3,8 +3,6 @@ from skimage.metrics import structural_similarity as compare_ssim
 import imutils
 import cv2
 import numpy as np
-from startCallibration import *
-from dartLocation import *
 
 
 def calc_image_difference(image_a, image_b):
@@ -252,6 +250,46 @@ def process_images(image_a, image_b):
     result = choose_dart_tip(dart_contour, points[0], point[1])
     return score_ssim, result, dart_contour_points
 
+def getResult(imageA, imageB):
+    print("Test functions:")
+    # preprocess image
+    grayA, grayB, thresh, diff, score_ssim = calc_image_difference(imageA, imageB)
+    print("SSIM: " + str(score_ssim))
+
+    # get contour of dart from image
+    dart_contour, dart_contour_points = get_dart_contour(thresh)
+
+    # draw contour
+    cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+    cv2.rectangle(imageB, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+
+    # calc 2 lines: 1. through the object (x, y, slope, p_line_r, p_line_l)
+    # and a 2. line orthogonal through the object p_ort_line_r, p_ort_line_l
+    x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, grayA.shape[1])
+
+    # draw these lines
+    cv2.line(imageA, p_line_r, p_line_l, 255, 2)
+
+    # calc intersection points between the bounding box and line through the object.
+    points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
+
+    # Choose the point which is the tip of the dart
+    result = choose_dart_tip(dart_contour, points[0], points[1])
+
+    # draw intersection points green
+    for point in points:
+        print(point)
+        cv2.circle(imageA, (point[0], point[1]), radius=5, color=(0, 255, 0), thickness=-1)
+
+    # draw dart tip yellow
+    cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
+
+    # show the output images
+    cv2.imshow("Original", imageA)
+    cv2.imshow("Modified",imageB)
+    cv2.imshow("Diff", diff)
+    cv2.imshow("Thresh", thresh)
+    return result
 
 # main class for testing
 if __name__ == "__main__":
@@ -260,55 +298,6 @@ if __name__ == "__main__":
     # load the two input images
     imageA = cv2.imread("Links-dart.jpg")
     imageB = cv2.imread("Links-empty.jpg")
-    cal_data, transformed_image = getCalibration(imageA,imageA)
-
-    if mode == 0:
-        print("Test functions:")
-        # preprocess image
-        grayA, grayB, thresh, diff, score_ssim = calc_image_difference(imageA, imageB)
-        print("SSIM: " + str(score_ssim))
-
-        # get contour of dart from image
-        dart_contour, dart_contour_points = get_dart_contour(thresh)
-
-        # draw contour
-        cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-        cv2.rectangle(imageB, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-
-        # calc 2 lines: 1. through the object (x, y, slope, p_line_r, p_line_l)
-        # and a 2. line orthogonal through the object p_ort_line_r, p_ort_line_l
-        x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, grayA.shape[1])
-
-        # draw these lines
-        cv2.line(imageA, p_line_r, p_line_l, 255, 2)
-
-        # calc intersection points between the bounding box and line through the object.
-        points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
-
-        # Choose the point which is the tip of the dart
-        result = choose_dart_tip(dart_contour, points[0], points[1])
-
-        # draw intersection points green
-        for point in points:
-            print(point)
-            cv2.circle(imageA, (point[0], point[1]), radius=5, color=(0, 255, 0), thickness=-1)
-
-        # draw dart tip yellow
-        cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
-
-        # show the output images
-        cv2.imshow("Original", imageA)
-        cv2.imshow("Modified",imageB)
-        cv2.imshow("Diff", diff)
-        cv2.imshow("Thresh", thresh)
-        
-        new_dart_coord = showLatestDartLocationOnBoard(transformed_image, result, cal_data)
-        game_point_result = detect_segment(new_dart_coord, cal_data)
-        cv2.putText(transformed_image, str(game_point_result), (int(new_dart_coord[0]),int(new_dart_coord[1])), cv2.FONT_HERSHEY_SIMPLEX, 
-                   2, (255, 0, 255), 4, cv2.LINE_AA)
-        cv2.imshow("player Points detected", transformed_image)
-        cv2.waitKey(0)
-
     if mode == 1:
         print("Test Wrapper function:")
 

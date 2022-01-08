@@ -3,12 +3,9 @@ import os.path
 import sys
 import cv2
 import pickle
-p = os.path.abspath('D:/00_Studium/07_Semester/TeamProjekt/TeamProject-WiSe-DartImageProcessing/Components/Calibration')
-sys.path.insert(1, p)
-
-from Utils import *
-from  ellipseToCircle import *
-from  Calibration_Cam_Matrix import *
+from .Utils import *
+from .ellipseToCircle import *
+from .CalibrationMain import *
 
 def getCalibration(imCalRGB_R, imCalRGB_L):
     imCalRGB_R = imCalRGB_R.copy();

@@ -1,10 +1,10 @@
 import cv2 
 import numpy as np
 import math
-from VideoCapture import VideoStream
-from Utils import *
+from .VideoCapture import VideoStream
+from .Utils import *
 from sympy import *
-from ellipseToCircle import *
+from .ellipseToCircle import *
 import pickle
 DEBUG = False
 
