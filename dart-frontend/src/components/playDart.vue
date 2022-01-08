@@ -23,9 +23,12 @@
           </div>
         </div>
         <div class="col-sm-2 col-12">
+          <div class="v-sheet theme--light rounded-lg"
+            style="min-height: 268px">
           <dart-scorer :dartScores="dartScores"></dart-scorer>
           <div class="head justify-center">
             <v-btn @click="changePlayer()" small dark>done?</v-btn>
+          </div>
           </div>
         </div>
       </div>
