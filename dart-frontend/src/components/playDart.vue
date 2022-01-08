@@ -14,9 +14,15 @@
           <div class="v-sheet theme--light rounded-lg" style="min-height: 50vh">
             <div class="ma-2 d-flex overflow-auto justify-center">
               <v-col cols="12" sm="8" class="ma-2 justify-center">
-                <current-player :currentPlayer="currentPlayer"></current-player>
+                <div v-if="win">
+                  <win :currentPlayer="currentPlayer"></win>
+                </div>
+                <div v-else>
+                  <current-player :currentPlayer="currentPlayer"></current-player>
+                  </div>
+                <!--current-player :currentPlayer="currentPlayer"></current-player-->
                 <div class="nextPlayer">
-                  <v-btn @click="changePlayer()" small dark>next player</v-btn>
+                  <v-btn @click="callibration()" small dark>Calibration</v-btn>
                 </div>
               </v-col>
             </div>
@@ -27,7 +33,8 @@
             style="min-height: 268px">
           <dart-scorer :dartScores="dartScores"></dart-scorer>
           <div class="head justify-center">
-            <v-btn @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="win" @click="init()" small dark>newGame?</v-btn>
           </div>
           </div>
         </div>
@@ -41,17 +48,19 @@ import ResizeText from "vue-resize-text";
 import PlayerList from "./PlayerList.vue";
 import CurrentPlayer from "./CurrentPlayer.vue";
 import DartScorer from "./DartScorer.vue";
+import Win from "./Win.vue"
 
 export default {
   name: "playDart",
   props: ["playernames", "initialSconre"],
-  components: { PlayerList, CurrentPlayer, DartScorer },
+  components: { PlayerList, CurrentPlayer, DartScorer, Win },
   directives: {
     ResizeText,
   },
   data: function () {
     return {
       record: [],
+      win: false,
       serverscore: 0,
       isHidden: false,
       players: [],
@@ -86,27 +95,37 @@ export default {
   methods: {
     changePlayer() {
       //this.$root.$refs.PlayerList.popout(this.currentPlayer);
-      this.playerCount = (this.playerCount + 4) % this.players.length;
-      this.currentPlayer = this.players[0];
-      let temp_player = this.currentPlayer
-      console.log("gechanged " +this.currentPlayer.name)
-      this.$root.$refs.PlayerList.popout(temp_player);
+      let finalscore = this.$root.$refs.DartScorer.getScore_all_tries_together();
+      this.calculateScore(finalscore)
+      if(this.win) {
+        console.log("test")
+      } else {
+        this.currentPlayer = this.players[0];
+        let temp_player = this.currentPlayer
+        this.$root.$refs.PlayerList.popout(temp_player);
+      }
+      //this.playerCount = (this.playerCount + 4) % this.players.length;
+      //this.currentPlayer = this.players[0];
+      //let temp_player = this.currentPlayer
+      //this.$root.$refs.PlayerList.popout(temp_player);
     },
 
     init() {
       const darts = [];
       for (let i = 0; i < 3; i++) {
-        if (i == 0) {
-          darts.push({
-            score: 0,
-          });
-        } else {
-          darts.push({
-            score: -1,
-          });
-        }
+        darts.push({score:5,}); // some changes for testing
+        // if (i == 0) {
+        //   darts.push({
+        //     score: 5,
+        //   });
+        // } else {
+        //   darts.push({
+        //     score: -1,
+        //   });
+        // }
       }
       this.dartScores = darts;
+      this.win=false;
       this.players = this.playernames.map((player) => ({
         name: player.name,
         score: this.initialScore || 301,
@@ -120,11 +139,26 @@ export default {
       // implement later
       console.log("life is good " + correct);
     },
+    calculateScore(finalscore){
+      let tmp_score = this.currentPlayer.score;
+      tmp_score = tmp_score - finalscore;
+      if(tmp_score > 0) {
+        this.currentPlayer.score = tmp_score
+      } else if(tmp_score == 0) {
+        this.currentPlayer.score = tmp_score
+        this.win = true;
+      } else {
+        alert("try again")
+      }
+    },
     createWebsocket() {
       this.connection = new WebSocket("ws://127.0.0.1:6969");
       console.log(this.connection);
       this.connection.send("hello");
     },
+    callibration(){
+      console.log("Test")
+    }
   },
 };
 </script>

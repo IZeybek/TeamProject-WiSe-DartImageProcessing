@@ -3,7 +3,7 @@
     <div
       v-for="(item, index) in dartScores"
       v-bind:key="index"
-      :style="{ padding: '5px', 'background-color': getTurn(index) }"
+      :style="{ padding: '5px', 'background-color': getTurn(index) }" @mouseover="showPencil = true"  @mouseleave="showPencil = false"
     >
       <v-row cols="1" sm="8" class="ma-2">
         <div class="justify-center">
@@ -15,15 +15,30 @@
           />
         </div>
         <div
-          v-if="item.score == 0"
+          v-if="isNumeric(item.score)"
           style="padding-left: 10px; margin-top: 2px; font-size: 20px"
         >
           <v-icon>mdi-equal</v-icon>{{ item.score }}
         </div>
         <div v-else style="padding-left: 8px">
-          <v-icon>mdi-equal</v-icon>
+          <v-icon>mdi-equal</v-icon> {{ item.score }} <!-- change later-->
         </div>
+        <!--div @mouseover="showPencil = true"  @mouseleave="showPencil = false"-->
+        <img v-show="showPencil" @click="showInput=true" @dblclick="showInput=false"
+            src="../assets/pencil.png"
+            width="30"
+            height="30"
+            style="padding: 2px;margin-left:38px;"
+          />
       </v-row>
+      <v-text-field v-show="showInput"
+                    type="number"
+                    class="mt-n6"
+                    v-model.number="corrected"
+                    placeholder="enter text"
+                    v-on:keyup.enter="onEnter(index)"
+                  ></v-text-field>
+                  
       <v-divider></v-divider>
     </div>
   </div>
@@ -34,7 +49,14 @@ export default {
   name: "DartScorer",
   props: ["dartScores"],
   data: function () {
-    return {};
+    return {
+      showPencil:false,
+      showInput:false,
+      corrected: 0,
+    };
+  },
+  created() {
+    this.$root.$refs.DartScorer = this;
   },
   methods: {
     getTurn(index) {
@@ -43,6 +65,25 @@ export default {
       } else {
         return "tranparent";
       }
+    },
+    onEnter: function(index) {
+      this.showInput=false;
+      this.dartScores[index].score=this.corrected
+    },
+    isNumeric(value) {
+      return Number.isInteger(value)
+    },
+    getDebug(){
+      for(let i = 0;i<this.dartScores.length;i++) {
+        console.log(this.dartScores[i].score)
+      }
+    },
+    getScore_all_tries_together(){
+      let finaladditonScore = 0;
+      for(let i= 0;i<this.dartScores.length;i++) {
+        finaladditonScore=finaladditonScore+this.dartScores[i].score
+      }
+      return finaladditonScore
     },
   },
 };
