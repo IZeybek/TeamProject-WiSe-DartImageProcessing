@@ -7,12 +7,13 @@ from .Utils import *
 from .ellipseToCircle import *
 from .CalibrationMain import *
 
-def getCalibration(imCalRGB_R, imCalRGB_L):
-    imCalRGB_R = imCalRGB_R.copy();
-    imCalRGB_L = imCalRGB_L.copy()
+def getCalibration(imCalRGB_R, imCalRGB_L, isCalibrate):
+
+    if isCalibrate == true:
+        return calibrate(imCalRGB_R, imCalRGB_L, isStatic=false)
     if os.path.isfile("calibrationData_R.pkl"):
             try:
-                return readCalibrationData(imCalRGB_R, imCalRGB_L)#, calData_L
+                return readCalibrationData()#, calData_L
 
             #corrupted file
             except EOFError as err:
@@ -25,28 +26,32 @@ def getCalibration(imCalRGB_R, imCalRGB_L):
         # cam_L = cv2.imread("Links-empty.jpg") # 
         return calibrate(imCalRGB_R, imCalRGB_L)
 
-def readCalibrationData(imCalRGB_R, imCalRGB_L):
+def readCalibrationData():
+    
+    imCalRGB_R = cv2.imread("cam_R.jpg") #
+    imCalRGB_L = cv2.imread("cam_L.jpg") #
+    
     calFile = open('calibrationData_R.pkl', 'rb')
     calData_R = CalibrationData()
     calData_R = pickle.load(calFile)
     calFile.close()
 
-    # calFile = open('calibrationData_R.pkl', 'rb')
-    # calData_L = CalibrationData()
-    # calData_L = pickle.load(calFile)
-    # calFile.close()
+    calFile = open('calibrationData_L.pkl', 'rb')
+    calData_L = CalibrationData()
+    calData_L = pickle.load(calFile)
+    calFile.close()
 
     #copy image for old calibration data
     transformed_img_R = imCalRGB_R.copy()
-    # transformed_img_L = imCalRGB_L.copy()
+    transformed_img_L = imCalRGB_L.copy()
 
     transformed_img_R = cv2.warpPerspective(imCalRGB_R, calData_R.transformation_matrix, (800, 800))
-    # transformed_img_L = cv2.warpPerspective(imCalRGB_L, calData_L.transformation_matrix, (800, 800))
+    transformed_img_L = cv2.warpPerspective(imCalRGB_L, calData_L.transformation_matrix, (800, 800))
     draw_R = getNormilizedBoard(transformed_img_R, calData_R)
-    # draw_L = getNormilizedBoard(imCalRGB_R,imCalRGB_R)
+    draw_L = getNormilizedBoard(imCalRGB_R,imCalRGB_R)
 
-    # transformed_img_L = draw_L.drawBoard(transformed_img_L, calData_L)
+    transformed_img_L = draw_L.drawBoard(transformed_img_L, calData_L)
 
-    cv2.imshow("Left_Cam", draw_R)
-    # cv2.imshow("Left Cam", transformed_img_L)
-    return calData_R , draw_R#, calData_L
+    cv2.imshow("Left_Cam", draw_L)
+    cv2.imshow("Right_Cam", draw_R)
+    return calData_L, draw_L, calData_R , draw_R

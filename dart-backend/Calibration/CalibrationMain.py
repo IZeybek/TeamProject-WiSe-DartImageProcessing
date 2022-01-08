@@ -1,7 +1,7 @@
 import cv2 
 import numpy as np
 import math
-from .VideoCapture import VideoStream
+import time
 from .Utils import *
 from sympy import *
 from .ellipseToCircle import *
@@ -13,10 +13,11 @@ def findEllipse(edged, image_proc_img):
     Ellipse = EllipseDef()
 
     contours, _ =  cv2.findContours(edged, 1, 2)
-    # cv2.drawContours(image_proc_img, contours, -1, (0, 255, 0), 3)
-    # cv2.imshow("all-counturs", image_proc_img)
-    minThresE = 80000
-    maxThresE = 100000
+    # countur = image_proc_img.copy()
+    # cv2.drawContours(countur, contours, -1, (0, 255, 0), 3)
+    # cv2.imshow("all-counturs", countur)
+    minThresE = 100000
+    maxThresE = 150000
     for cnt in contours:
         print(cv2.contourArea(cnt));
         try:  # threshold critical, change on demand?
@@ -24,16 +25,15 @@ def findEllipse(edged, image_proc_img):
             if minThresE < area < maxThresE:
                 
                 ellipse = cv2.fitEllipse(cnt)
-                test = image_proc_img.copy()
-                cv2.ellipse(test, ellipse, (255, 0, 0), 2)
                 
                 x, y = ellipse[0]
                 a, b = ellipse[1] 
                 angle = ellipse[2]
-                y += 5
-                # a -= 5
-                b -= 5
-                # cv2.drawContours(image_proc_img, cnt, -1, (255, 0, 0), 10)
+                # y += 1
+                x += 1
+                a += 5
+                b += 5
+                # cv2.drawContours(image_proc_img, cnt, -1, (0, 255, 0), 2)
                 
                 a = a / 2
                 b = b / 2
@@ -41,7 +41,6 @@ def findEllipse(edged, image_proc_img):
                             (255, 0, 0), 3)
                 cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), 3)
   
-                cv2.imshow("sss", image_proc_img)
                 Ellipse.a = a
                 Ellipse.b = b
                 Ellipse.x = x
@@ -56,7 +55,7 @@ def findEllipse(edged, image_proc_img):
 def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
 
     # fit line to find intersec point for dartboard center point
-    lines = cv2.HoughLines(edged, 1, np.pi / 80, 105, 100)
+    lines = cv2.HoughLines(edged, 1, np.pi / 80, 80, 100)
 
     intersectLines = []
     intersectLines_XY_coord = []
@@ -88,8 +87,6 @@ def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
 
     # cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), 3)
     
-        
-    cv2.imshow("lines-detected", image_proc_img)
     
     return intersectLines_XY_coord, image_proc_img
 
@@ -144,89 +141,126 @@ def locateRedSpots(img):
     
 def initTransformationMatrix(image_proc_img):
 
-    blurred = cv2.GaussianBlur(image_proc_img, (3, 3), -1)
+    cv2.imshow("original", image_proc_img)
+    blurred = cv2.GaussianBlur(image_proc_img, (7, 7), -1)
     gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
-    
     cv2.imshow("1-gray", gray)
     
     # return the edged image
-    edged = cv2.Canny(gray, 100, 255)  # imCal
+    
+    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    cv2.imshow("hsv", hsv)
+    
+    h, s, hsv = cv2.split(hsv)
+    
+    ret, tresh = cv2.threshold(hsv, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    cv2.imshow("2-treshold-hsv", tresh)
+    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    edged = cv2.Canny(edged_tresh, 255, 255)  # imCal
+
     cv2.imshow("autocanny", edged)
-    ret, inv_edge = cv2.threshold(edged, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    cv2.imshow("2-inv_edge", inv_edge)
     
-    kernel = np.ones((17, 17), np.uint8) 
-    inv_edge = cv2.morphologyEx(inv_edge, cv2.MORPH_ERODE, kernel)
-    cv2.imshow("4-erode_edge", inv_edge)
-    
-    kernel = np.ones((15, 15), np.uint8) 
-    inv_edge = cv2.morphologyEx(inv_edge, cv2.MORPH_DILATE, kernel)
-    cv2.imshow("5-Dilate_edge", inv_edge)
+
+    # open -> erode then dilate
+    # close -> dilate then erode
+
+    # Morphological opening: Get rid of the stuff around the main board circle
+    inv_edge = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+    inv_edge = cv2.morphologyEx(inv_edge, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
     
     # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>
+    cv2.imshow("3-new-Morph", inv_edge)
+    
+
+    key = cv2.waitKey(0)
+    if key == 1:
+        cv2.destroyAllWindows()
+        
     Ellipse, image_proc_img = findEllipse(inv_edge, image_proc_img)
-    
+    cv2.imshow("4-findEllipse", image_proc_img)
+    key = cv2.waitKey(0)
+    if key == 1:
+        cv2.destroyAllWindows()
     # TODO: optimize angleZones
-    angleZone1 = (Ellipse.angle + 1 , Ellipse.angle + 5)
-    angleZone2 = (Ellipse.angle + 80, Ellipse.angle + 100)
-    lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
     
+    # angleZone1 = (Ellipse.angle + 5 , Ellipse.angle + 15)
+    # angleZone2 = (Ellipse.angle + 100, Ellipse.angle + 120)
+    # lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
+    
+    angleZone1_L = (Ellipse.angle  - 30 , Ellipse.angle - 20 )
+    angleZone2_L = (Ellipse.angle + 35, Ellipse.angle + 40)
+    lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1_L, angleZone2_L)
+    cv2.imshow("5-lines", image_proc_img)
+    key = cv2.waitKey(0)
+    if key == 1:
+        cv2.destroyAllWindows()
+    # TODO: optimize angleZones
     intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
     return intersectPoints, Ellipse
+
+def initCalibration(calData, snapshot, original):
+    calData.intersectPoints, Ellipse = initTransformationMatrix(snapshot)
     
-def calibrate(cam_R, cam_L):
-#------------------------------------------
+    calData.ellipsecenter = (Ellipse.x, Ellipse.y)
+    calData.destinationPoints = [8, 18, 13, 3] # [0, 5, 10, 15]
     
-    # try:
-    #    success, snapshot_cam_R = cam_R.read()
-    #    _, snapshot_cam_L = cam_L.read()
-
-    # except:
-    #    print("Could not init cams")
-    #    return
-
-    # imCal_R = snapshot_cam_R.copy()
-    # # imCal_L = snapshot_cam_L.copy()
-
-    # imCalRGBorig = snapshot_cam_R.copy()
-
-#------------------------------------------
-    
-    snapshot_cam_R = cam_R.copy()
-    # snapshot_cam_L = cam_L.copy()
-    snapshot_cam_R = cam_R.copy()
-    # snapshot_cam_L = cam_L.copy()
-#------------------------------------------
-    cv2.imwrite("cam_R.jpg", snapshot_cam_R)
-    #cv2.imwrite("cam_R_L.jpg", imCalRGB_L)
-
-    calData_R = CalibrationData()
-    #calData_L = CalibrationData()
-
-    original = snapshot_cam_R.copy()
-    calData_R.intersectPoints, Ellipse = initTransformationMatrix(snapshot_cam_R)
-    
-    calData_R.ellipsecenter = (Ellipse.x, Ellipse.y)
-    calData_R.destinationPoints = [8, 18, 13, 3] # [0, 5, 10, 15]
     test = cv2.waitKey(0)
     if test == 3:
         print("done")
-    calData_R.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData_R)
+    calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
     
     test = cv2.waitKey(0)
     if test == 9:
         print("done")
     #write the calibration data to a file
     calFile = open("calibrationData_R.pkl", "wb")
-    pickle.dump(calData_R, calFile, 0)
+    pickle.dump(calData, calFile, 0)
     calFile.close()
+    return calData, transformed_image
+    
+def calibrate(cam_R, cam_L, isStatic):
+#------------------------------------------
+ 
+    try:
+        success, image_R = cam_R.read()
+        time.sleep(2.0)
+        success, image_L = cam_L.read()
+        time.sleep(2.0)
+        
+        snapshot_cam_R = image_R.copy()
+        snapshot_cam_L = image_L.copy()
+    except:
+        print("Could not init camaras - geting last saved image")
+        
+        cam_R = cv2.imread("cam_R.jpg")
+        cam_L = cv2.imread("cam_L.jpg")
+    
+        snapshot_cam_R = cam_R.copy()
+        snapshot_cam_L = cam_L.copy()
+        # snapshot_cam_L = cam_R.copy()
+        # snapshot_cam_L = cam_L.copy()
+    
+        
+#------------------------------------------
+    cv2.imwrite("cam_R.jpg", snapshot_cam_R)
+    cv2.imwrite("cam_L.jpg", snapshot_cam_L)
+
+    calData_R = CalibrationData()
+    calData_L = CalibrationData()
+
+    original_R = snapshot_cam_R.copy()
+    original_L = snapshot_cam_L.copy()
+    
+    calData_R, transformed_image_R = initCalibration(calData_R, snapshot_cam_R, original_R)
+    calData_L, transformed_image_L =initCalibration(calData_L, snapshot_cam_L, original_L)
     
     test = cv2.waitKey(0)
     if test == 3:
         cv2.destroyAllWindows()
    
-    return calData_R, transformed_image
+    return calData_R, transformed_image_R, calData_L, transformed_image_L
 
 
 if __name__ == '__main__':
