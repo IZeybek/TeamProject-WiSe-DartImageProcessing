@@ -10,6 +10,7 @@ class EllipseDef:
 
 class CalibrationData:
     def __init__(self):
+        self.ellipsecenter= (0,0)
         self.intersectPoints = []
         self.ring_radius = [14, 32, 194, 214, 320, 340]
         self.center_dartboard = (400, 400)
