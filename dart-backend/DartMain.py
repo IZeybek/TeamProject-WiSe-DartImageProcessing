@@ -17,8 +17,8 @@ if __name__ == "__main__":
 #     cam_R = VideoStream(src=0).start() 
     # cam_L = VideoStream(src=0).start()
     
-    cam_R = VideoStream(src=0).start()
     cam_L = VideoStream(src=1).start()
+    cam_R = VideoStream(src=0).start()
     cal_data_R, transformed_image_R, cal_data_L, transformed_image_L = getCalibration(cam_R, cam_L, isCalibrate=true)
     
     

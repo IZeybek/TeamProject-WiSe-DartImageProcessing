@@ -5,6 +5,7 @@ import time
 from .Utils import *
 from sympy import *
 from .ellipseToCircle import *
+from .Contrast import applyContrast
 import pickle
 DEBUG = False
 
@@ -30,16 +31,16 @@ def findEllipse(edged, image_proc_img):
                 a, b = ellipse[1] 
                 angle = ellipse[2]
                 # y += 1
-                x += 1
-                a += 5
-                b += 5
+                # x += 1
+                # a += 5
+                # b += 5
                 # cv2.drawContours(image_proc_img, cnt, -1, (0, 255, 0), 2)
                 
                 a = a / 2
                 b = b / 2
                 cv2.ellipse(image_proc_img, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
-                            (255, 0, 0), 3)
-                cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), 3)
+                            (255, 0, 0), 1)
+                cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), -1)
   
                 Ellipse.a = a
                 Ellipse.b = b
@@ -49,13 +50,12 @@ def findEllipse(edged, image_proc_img):
         # corrupted file
         except:
             continue
-
     return Ellipse, image_proc_img
 
-def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
+def findSectorLines(edged, image_proc_img, calData):
 
     # fit line to find intersec point for dartboard center point
-    lines = cv2.HoughLines(edged, 1, np.pi / 80, 80, 100)
+    lines = cv2.HoughLines(edged, 1, np.pi / 80, 110, 100)
 
     intersectLines = []
     intersectLines_XY_coord = []
@@ -71,12 +71,12 @@ def findSectorLines(edged, image_proc_img, angleZone1, angleZone2):
         y1 = int(y0 + 2000 * (a))
         x2 = int(x0 - 2000 * (-b))
         y2 = int(y0 - 2000 * (a))
-        if theta > np.pi / 180 * angleZone1[0] and theta < np.pi / 180 * angleZone1[1]:
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)           
+        if theta > np.pi / 180 * calData.angleZone_horizontal[0] and theta < np.pi / 180 * calData.angleZone_horizontal[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)              
             intersectLines.append(line[0]);
             intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
-        elif theta > np.pi / 180 * angleZone2[0] and theta < np.pi / 180 * angleZone2[1]:
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)
+        elif theta > np.pi / 180 * calData.angleZone_vertical[0] and theta < np.pi / 180 * calData.angleZone_vertical[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)     
             intersectLines.append(line[0]);
             intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
     
@@ -139,85 +139,92 @@ def locateRedSpots(img):
     # cv2.imshow("result-OPEN", thresh2)
     test =2
     
-def initTransformationMatrix(image_proc_img):
+def getEdges(tresh):
+    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    edged = cv2.Canny(edged_tresh, 250, 255)  # imCal
 
+    cv2.imshow("canny", edged)
+    return edged
+
+def getTreshold(image_proc_img):
+    image_proc_img = applyContrast(image_proc_img, 260, 170)
     cv2.imshow("original", image_proc_img)
-    blurred = cv2.GaussianBlur(image_proc_img, (7, 7), -1)
+    blurred = cv2.GaussianBlur(image_proc_img, (3, 3), -1)
     gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
     cv2.imshow("1-gray", gray)
     
     # return the edged image
     
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    cv2.imshow("hsv", hsv)
+    cv2.imshow("2-hsv", hsv)
     
     h, s, hsv = cv2.split(hsv)
     
     ret, tresh = cv2.threshold(hsv, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    cv2.imshow("3-treshold-hsv", tresh)
+    return tresh
 
-    cv2.imshow("2-treshold-hsv", tresh)
-    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
-    edged = cv2.Canny(edged_tresh, 255, 255)  # imCal
-
-    cv2.imshow("autocanny", edged)
-    
-
+def smoothEllipse(tresh):
     # open -> erode then dilate
     # close -> dilate then erode
+    # smooth out board to get an even ellipse
+    pre_processing_ellipse = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+    return pre_processing_ellipse
+    
+def preProcessImage(image_proc_img):
+    tresh = getTreshold(image_proc_img)
 
-    # Morphological opening: Get rid of the stuff around the main board circle
-    inv_edge = cv2.morphologyEx(tresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
-    inv_edge = cv2.morphologyEx(inv_edge, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    pre_processing_lines = getEdges(tresh)
+    pre_processing_ellipse = smoothEllipse(tresh)
+
+    return pre_processing_lines, pre_processing_ellipse
     
-    # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>
-    cv2.imshow("3-new-Morph", inv_edge)
-    
+def getIntersectionPointsFromEllipse(image_proc_img, calData):
+
+    # preprocess image in order to locate a well mapped Ellipse and to get two lines intersecting it in 4 diagonal points
+    pre_processed_lines, pre_processed_ellipse = preProcessImage(image_proc_img)
+    cv2.imshow("3-pre_processing_ellipse", pre_processed_ellipse)
 
     key = cv2.waitKey(0)
     if key == 1:
         cv2.destroyAllWindows()
-        
-    Ellipse, image_proc_img = findEllipse(inv_edge, image_proc_img)
+    
+    # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>    
+    Ellipse, image_proc_img = findEllipse(pre_processed_ellipse, image_proc_img)
     cv2.imshow("4-findEllipse", image_proc_img)
     key = cv2.waitKey(0)
     if key == 1:
         cv2.destroyAllWindows()
     # TODO: optimize angleZones
     
-    # angleZone1 = (Ellipse.angle + 5 , Ellipse.angle + 15)
-    # angleZone2 = (Ellipse.angle + 100, Ellipse.angle + 120)
-    # lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1, angleZone2)
+    #
+    calData.angleZone_horizontal = (Ellipse.angle + calData.angleZone_horizontal[0] , Ellipse.angle + calData.angleZone_horizontal[1])
+    calData.angleZone_vertical  = (Ellipse.angle + calData.angleZone_vertical[0], Ellipse.angle + calData.angleZone_vertical[1])
+    lines_seg, image_proc_img = findSectorLines(pre_processed_lines, image_proc_img, calData)
     
-    angleZone1_L = (Ellipse.angle  - 30 , Ellipse.angle - 20 )
-    angleZone2_L = (Ellipse.angle + 35, Ellipse.angle + 40)
-    lines_seg, image_proc_img = findSectorLines(edged, image_proc_img, angleZone1_L, angleZone2_L)
-    cv2.imshow("5-lines", image_proc_img)
+    cv2.imshow("5-detectedLines", image_proc_img)
     key = cv2.waitKey(0)
     if key == 1:
         cv2.destroyAllWindows()
     # TODO: optimize angleZones
     intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
-    return intersectPoints, Ellipse
+    return intersectPoints
 
 def initCalibration(calData, snapshot, original):
-    calData.intersectPoints, Ellipse = initTransformationMatrix(snapshot)
     
-    calData.ellipsecenter = (Ellipse.x, Ellipse.y)
-    calData.destinationPoints = [8, 18, 13, 3] # [0, 5, 10, 15]
+    calData.intersectPoints = getIntersectionPointsFromEllipse(snapshot, calData)
     
     test = cv2.waitKey(0)
-    if test == 3:
-        print("done")
+    if test == 1:
+        cv2.destroyAllWindows()
+        
+ 
     calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
+        
+    cv2.imshow('transformed_image_final', transformed_image)
+
     
-    test = cv2.waitKey(0)
-    if test == 9:
-        print("done")
-    #write the calibration data to a file
-    calFile = open("calibrationData_R.pkl", "wb")
-    pickle.dump(calData, calFile, 0)
-    calFile.close()
     return calData, transformed_image
     
 def calibrate(cam_R, cam_L, isStatic):
@@ -225,9 +232,7 @@ def calibrate(cam_R, cam_L, isStatic):
  
     try:
         success, image_R = cam_R.read()
-        time.sleep(2.0)
         success, image_L = cam_L.read()
-        time.sleep(2.0)
         
         snapshot_cam_R = image_R.copy()
         snapshot_cam_L = image_L.copy()
@@ -240,25 +245,46 @@ def calibrate(cam_R, cam_L, isStatic):
         snapshot_cam_R = cam_R.copy()
         snapshot_cam_L = cam_L.copy()
         # snapshot_cam_L = cam_R.copy()
-        # snapshot_cam_L = cam_L.copy()
+        # snapshot_cam_L = cam_L.copy1()
     
         
 #------------------------------------------
-    cv2.imwrite("cam_R.jpg", snapshot_cam_R)
-    cv2.imwrite("cam_L.jpg", snapshot_cam_L)
-
-    calData_R = CalibrationData()
-    calData_L = CalibrationData()
+    # cv2.imwrite("cam_R.jpg", snapshot_cam_R)
+    # cv2.imwrite("cam_L.jpg", snapshot_cam_L)
 
     original_R = snapshot_cam_R.copy()
     original_L = snapshot_cam_L.copy()
     
+
+    calData_R = CalibrationData()
+    calData_L = CalibrationData()
+
+    calData_R.angleZone_horizontal = ( -30 , -20)
+    calData_R.angleZone_vertical  = (35, 40)
+    calData_R.destinationPoints = [19, 9, 14, 4] # [0, 5, 10, 15]
     calData_R, transformed_image_R = initCalibration(calData_R, snapshot_cam_R, original_R)
-    calData_L, transformed_image_L =initCalibration(calData_L, snapshot_cam_L, original_L)
-    
+
     test = cv2.waitKey(0)
-    if test == 3:
+    if test == 1:
         cv2.destroyAllWindows()
+    #write the calibration data to a file
+    calFile = open("calibrationData_R.pkl", "wb")
+    pickle.dump(calData_R, calFile, 0)
+    calFile.close()
+    calData_L.angleZone_horizontal = (10 , 15)
+    calData_L.angleZone_vertical = (80, 140)
+    calData_L.destinationPoints = [14, 4, 9, 19] # [0, 5, 10, 15]
+    calData_L, transformed_image_L = initCalibration(calData_L, snapshot_cam_L, original_L)
+    
+
+    test = cv2.waitKey(0)
+    if test == 1:
+        cv2.destroyAllWindows()
+    #write the calibration data to a file
+    calFile = open("calibrationData_L.pkl", "wb")
+    pickle.dump(calData_L, calFile, 0)
+    calFile.close()    
+    
    
     return calData_R, transformed_image_R, calData_L, transformed_image_L
 

@@ -50,9 +50,24 @@ def getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img):
         transformed_intersectpoints.append(inter_p1)
         transformed_intersectpoints.append(inter_p2)
     
-    for points in transformed_intersectpoints:
-         cv2.circle(image_proc_img,  (int(points[0]), int(points[1])), 10, (0, 255, 255), -1)
-
+    # for points in transformed_intersectpoints:
+    #      cv2.circle(image_proc_img,  (int(points[0]), int(points[1])), 10, (0, 255, 255), -1)
+    point1 = (int(transformed_intersectpoints[0][0]), int(transformed_intersectpoints[0][1]))
+    piont2 = (int(transformed_intersectpoints[1][0]), int(transformed_intersectpoints[1][1]))
+    piont3 = (int(transformed_intersectpoints[2][0]), int(transformed_intersectpoints[2][1]))
+    piont4 = (int(transformed_intersectpoints[3][0]), int(transformed_intersectpoints[3][1]))
+    cv2.circle(image_proc_img,  point1, 5, (255, 0, 0), 3)    
+    cv2.putText(image_proc_img, str(1), point1, cv2.FONT_HERSHEY_SIMPLEX, 
+                2, (255, 0, 255), 4, cv2.LINE_AA)
+    cv2.circle(image_proc_img,  piont2, 5, (0, 255, 0), 3)
+    cv2.putText(image_proc_img, str(2), piont2, cv2.FONT_HERSHEY_SIMPLEX, 
+                2, (255, 0, 255), 4, cv2.LINE_AA)
+    cv2.circle(image_proc_img,  piont3, 5, (255, 0, 0), 3)
+    cv2.putText(image_proc_img, str(3), piont3, cv2.FONT_HERSHEY_SIMPLEX, 
+                2, (255, 0, 255), 4, cv2.LINE_AA)
+    cv2.circle(image_proc_img,  piont4, 5, (0, 255, 0), 3) 
+    cv2.putText(image_proc_img, str(4), piont4, cv2.FONT_HERSHEY_SIMPLEX, 
+                2, (255, 0, 255), 4, cv2.LINE_AA)
     cv2.imshow("intersection points", image_proc_img)
     return transformed_intersectpoints, image_proc_img
 
@@ -85,8 +100,6 @@ def getFinalTransformationMatrix(original_img, calData):
 
     for dstPoint in dst_points:
         cv2.circle(normilzed_board_image, (int(dstPoint[0]), int(dstPoint[1])), 2, (255, 255, 0), 2, 4)
-    
-    cv2.imshow('transformed_image_final', normilzed_board_image)
 
     return transformation_matrix, normilzed_board_image
 

@@ -15,6 +15,8 @@ class CalibrationData:
         self.ring_radius = [14, 32, 194, 214, 320, 340]
         self.center_dartboard = (400, 400)
         self.sectorangle = 2 * math.pi / 20
+        self.angleZone_horizontal = (0,0)
+        self.angleZone_vertical = (0,0)
         self.destinationPoints = []
         self.transformation_matrix = []
 
