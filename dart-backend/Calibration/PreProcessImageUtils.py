@@ -1,9 +1,7 @@
-import math
 import numpy as np
 import cv2
 from .Contrast import applyContrast
 from .EllipseUtils import smoothEllipse
-
 
 def locateRedSpots(img):
     

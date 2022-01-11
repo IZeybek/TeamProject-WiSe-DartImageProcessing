@@ -4,7 +4,6 @@ import imutils
 import cv2
 import numpy as np
 
-
 def calc_image_difference(image_a, image_b):
     """Calculates the difference between 2 images and creates a new image which contains the difference.
 

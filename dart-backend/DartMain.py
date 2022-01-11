@@ -3,7 +3,6 @@ import sys
 sys.path
 
 import cv2
-import numpy as np
 from Calibration.CalibrationMain import *
 from DartDetection.DartLocation import *
 from DartDetection.DartDetection import *

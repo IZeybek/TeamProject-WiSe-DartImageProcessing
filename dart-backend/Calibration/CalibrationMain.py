@@ -1,16 +1,10 @@
 import cv2 
-import numpy as np
 import os.path
-import math
-import time
 from .Utils import *
 from sympy import *
 from .EllipseUtils import *
 from .PreProcessImageUtils import *
 import pickle
-DEBUG = False
-
-
 
 def getCalibration(calData, snapshot, original):
         # preprocess image in order to locate a well mapped Ellipse and to get two lines intersecting it in 4 diagonal points
