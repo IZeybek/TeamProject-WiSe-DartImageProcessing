@@ -18,7 +18,7 @@ def getVideoStream(src=0):
         snapshot_cam = camRGB.copy()
         
     except:
-        print("Could not init camaras - getting last saved image")
+        print("Could not init camaras")
         return None
 
     return videoStream, snapshot_cam

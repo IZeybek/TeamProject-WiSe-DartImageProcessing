@@ -5,7 +5,7 @@ import math
 import time
 from .Utils import *
 from sympy import *
-from .ellipseUtils import *
+from .EllipseUtils import *
 from .PreProcessImageUtils import *
 import pickle
 DEBUG = False
@@ -19,12 +19,9 @@ def getCalibration(calData, snapshot, original):
 
     waitForKey()
     calData.intersectPoints = getIntersectionPointsFromEllipse(snapshot, pre_processed_lines, pre_processed_ellipse, calData)
-    
+
     waitForKey()
-        
     calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
-        
-    cv2.imshow('transformed_image_final', transformed_image)
     return calData, transformed_image
     
 def calibrateAll(snapshot_cam_R, snapshot_cam_L):
@@ -48,6 +45,7 @@ def calibrateRight(snapshot_cam_R, original_R):
     calData_R.angleZone_vertical  = (-160, -150)
     calData_R.destinationPoints = [14, 4, 19, 9] # [0, 5, 10, 15]
     calData_R, transformed_image_R = getCalibration(calData_R, snapshot_cam_R, original_R)
+    cv2.imshow('transformed_R', transformed_image_R)
     waitForKey()
         
     return calData_R, transformed_image_R
@@ -60,7 +58,7 @@ def calibrateLeft(snapshot_cam_L, original_L):
     calData_L.destinationPoints = [9, 19, 15, 5] # [0, 5, 10, 15]
     calData_L, transformed_image_L = getCalibration(calData_L, snapshot_cam_L, original_L)
     
-    
+    cv2.imshow('transformed_L', transformed_image_L)
     waitForKey()
     
     return calData_L, transformed_image_L
