@@ -10,7 +10,7 @@ from .CalibrationMain import *
 def getCalibration(imCalRGB_R, imCalRGB_L, isCalibrate):
 
     if isCalibrate == true:
-        return calibrate(imCalRGB_R, imCalRGB_L, isStatic=false)
+        return calibrate(imCalRGB_R, imCalRGB_L, isStatic=False)
     if os.path.isfile("calibrationData_R.pkl"):
             try:
                 return readCalibrationData()#, calData_L

@@ -91,7 +91,7 @@ def getFinalTransformationMatrix(original_img, calData):
     src_points = []
     for point in intersectPoints:
         src_points.append((point[0], point[1]))
-
+    
     transformation_matrix = cv2.getPerspectiveTransform(np.array(src_points, np.float32), np.array(dst_points, np.float32))
 
     normilzed_board_image = cv2.warpPerspective(original_img, transformation_matrix, (800, 800))

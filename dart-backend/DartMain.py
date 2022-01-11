@@ -12,13 +12,13 @@ from DartDetection.DartDetection import *
 from Calibration.VideoCapture import *
 
 if __name__ == "__main__":
-     # load the two input images
-    empty = cv2.imread("Links-empty.jpg")
-#     cam_R = VideoStream(src=0).start() 
-    # cam_L = VideoStream(src=0).start()
     
-    cam_L = VideoStream(src=1).start()
-    cam_R = VideoStream(src=0).start()
+    
+    # cam_R = cv2.imread("cam_R.jpg")
+    # cam_L = cv2.imread("cam_L.jpg")
+    
+    cam_L = VideoStream(src=0).start()
+    cam_R = VideoStream(src=1).start()
     cal_data_R, transformed_image_R, cal_data_L, transformed_image_L = getCalibration(cam_R, cam_L, isCalibrate=true)
     
     

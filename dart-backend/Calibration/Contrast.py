@@ -101,7 +101,7 @@ def adjustContrast(image):
 if __name__ == '__main__':
     # The function imread loads an image
     # from the specified file and returns it.
-    original = cv2.imread("cam_L.jpg")
+    original = cv2.imread("cam_R.jpg")
  
     # Making another copy of an image.
     img = original.copy()
