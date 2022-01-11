@@ -47,7 +47,6 @@ def calc_image_difference(image_a, image_b):
 
     return grayA, grayB, thresh, diff, ssim_score
 
-
 def calc_ssim(img_a, img_b):
     """Calculate the difference between 2 images.
 
@@ -70,7 +69,6 @@ def calc_ssim(img_a, img_b):
     (score, diff) = compare_ssim(img_a, img_b, full=True)
     diff = (diff * 255).astype("uint8")
     return score, diff
-
 
 def get_dart_contour(img):
     """Calculate the contours of the biggest shape in the img.
@@ -101,7 +99,6 @@ def get_dart_contour(img):
             dart_contour = c
             dart_contour_points = ((x, y), (x + w, y + h))
     return dart_contour, dart_contour_points
-
 
 def calc_object_lines(contour, offset):
     """Calculates a line which goes through the center of the detected dart.
@@ -141,7 +138,6 @@ def calc_object_lines(contour, offset):
     slope = (p_line_l[1] - p_line_r[1]) / (p_line_l[0] - p_line_r[0])
 
     return x, y, slope, p_line_r, p_line_l
-
 
 def calc_bounding_box_intersection(a, b, p, slope):
     """Calculate the intersection of a line (defined by p and slope) and the bounding box (defined by a and b)
@@ -186,7 +182,6 @@ def calc_bounding_box_intersection(a, b, p, slope):
         new_points.append((int(x2), int(b[1])))
 
     return new_points
-
 
 def choose_dart_tip(contour, point_1, point_2):
     """Calculate which of the two possible dart_tip locations is correct.

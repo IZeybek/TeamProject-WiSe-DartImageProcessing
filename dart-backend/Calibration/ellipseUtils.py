@@ -71,13 +71,11 @@ def getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img):
     cv2.imshow("intersection points", image_proc_img)
     return transformed_intersectpoints, image_proc_img
 
-
 def calculateDstPoint(i, calData):
     dstpoint = [(calData.center_dartboard[0] + calData.ring_radius[5] * math.cos((0.5 + i) * calData.sectorangle)),
                 (calData.center_dartboard[1] + calData.ring_radius[5] * math.sin((0.5 + i) * calData.sectorangle))]
 
     return dstpoint
-
 
 def getFinalTransformationMatrix(original_img, calData):
 
@@ -120,3 +118,123 @@ def getNormilizedBoard(img, calData):
                 int(center + calData.ring_radius[5] * math.sin(sectorAngle))), (255, 255, 255), 1)
 
         return img
+
+    
+def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_processed_ellipse, calData):
+
+    # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>    
+    Ellipse, image_proc_img = findEllipse(pre_processed_ellipse, image_proc_img)
+    cv2.imshow("4-findEllipse", image_proc_img)
+    
+    waitForKey()
+
+    calData.angleZone_horizontal = (Ellipse.angle + calData.angleZone_horizontal[0] , Ellipse.angle + calData.angleZone_horizontal[1])
+    calData.angleZone_vertical  = (Ellipse.angle + calData.angleZone_vertical[0], Ellipse.angle + calData.angleZone_vertical[1])
+    lines_seg, image_proc_img = findSectorLines(pre_processed_lines, image_proc_img, calData)
+    
+    cv2.imshow("5-detectedLines", image_proc_img)
+    waitForKey()
+    # TODO: optimize angleZones
+    intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
+
+    return intersectPoints
+
+def smoothEllipse(tresh):
+    # open -> erode then dilate
+    # close -> dilate then erode
+    # smooth out board to get an even ellipse
+    pre_processing_ellipse = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    pre_processing_ellipse = cv2.morphologyEx(pre_processing_ellipse, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+    return pre_processing_ellipse
+
+def findSectorLines(edged, image_proc_img, calData):
+    
+    # fit line to find intersec point for dartboard center point
+    #LEFT
+    # lines = cv2.HoughLines(edged, 1, np.pi / 135, 100)
+    #Right
+    lines = cv2.HoughLines(edged, 1, np.pi / 140, 105,100)
+    
+    center= (400,300)
+    horizontal_offset = 100
+    vertical_offset = 100
+    intersectLines = []
+    intersectLines_XY_coord = []
+    ## sector angles important -> make accessible
+    for line in lines:
+        # rho, theta = line[0]
+        rho, theta = line[0]
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        x1 = int(x0 + 2000 * (-b))
+        y1 = int(y0 + 2000 * (a))
+        x2 = int(x0 - 2000 * (-b))
+        y2 = int(y0 - 2000 * (a))
+        if theta > np.pi / 180 * calData.angleZone_horizontal[0] and theta < np.pi / 180 * calData.angleZone_horizontal[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)              
+            intersectLines.append(line[0])
+            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+        elif theta > np.pi / 180 * calData.angleZone_vertical[0] and theta < np.pi / 180 * calData.angleZone_vertical[1]:
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)     
+            intersectLines.append(line[0])
+            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+    
+    # if len(intersectLines) == 2:
+    #     x, y = intersection(intersectLines[0], intersectLines[1])
+    # else:
+    #     x, y = segmented_intersections(intersectLines)    
+
+    # cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), -1)
+    
+    
+    return intersectLines_XY_coord, image_proc_img
+
+def findEllipse(edged, image_proc_img):
+    
+    Ellipse = EllipseDef()
+
+    contours, _ =  cv2.findContours(edged, 1, 2)
+    # countur = image_proc_img.copy()
+    # cv2.drawContours(countur, contours, -1, (0, 255, 0), 3)
+    # cv2.imshow("all-counturs", countur)
+    minThresE = 100000
+    maxThresE = 150000
+    for cnt in contours:
+        print(cv2.contourArea(cnt));
+        try:  # threshold critical, change on demand?
+            area = cv2.contourArea(cnt);
+            if minThresE < area < maxThresE:
+                
+                ellipse = cv2.fitEllipse(cnt)
+                
+                x, y = ellipse[0]
+                a, b = ellipse[1] 
+                angle = ellipse[2]
+                # y += 4
+                # x += 1
+                a -= 2
+                b -= 2
+                # cv2.drawContours(image_proc_img, cnt, -1, (0, 255, 0), 2)
+                
+                a = a / 2
+                b = b / 2
+                cv2.ellipse(image_proc_img, (int(x), int(y)), (int(a), int(b)), int(angle), 0.0, 360.0,
+                            (255, 0, 0), 1)
+                cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 255, 0), -1)
+  
+                Ellipse.a = a
+                Ellipse.b = b
+                Ellipse.x = x
+                Ellipse.y = y
+                Ellipse.angle = angle
+        # corrupted file
+        except:
+            continue
+    return Ellipse, image_proc_img
+
+def waitForKey():
+    keyInput = cv2.waitKey(0)
+    if keyInput == 1:
+        cv2.destroyAllWindows()
