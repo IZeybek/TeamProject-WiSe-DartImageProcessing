@@ -48,11 +48,11 @@ def segmented_intersections(lines):
         for line2 in lines[i+1:]:
             intersections.append(intersection(line1, line2)) 
 
-    x0,y0 = (0,0);
+    x0, y0 = (0,0)
     for x, y in intersections:
         x0 += x
         y0 += y
-    return x0/ len(intersections), y0/ len(intersections)
+    return x0 / len(intersections), y0 / len(intersections)
 
 
 def intersectLineCircle(center, radius, p1, p2):

@@ -28,7 +28,7 @@ def detect_segment(new_dart_coord, calData):
     result_ring = -1
     for index, ring in enumerate(calData.ring_radius):
         inner_ring = ring
-        outer_ring = calData.ring_radius[(index+1) %6]
+        outer_ring = calData.ring_radius[(index+1) % 6]
         if index == 0 and distance_of_point_to_center < inner_ring:
             print("first Ring")
             result_ring = 0 
@@ -37,13 +37,14 @@ def detect_segment(new_dart_coord, calData):
             print("between middle and outer " + str(index + 1))
             result_ring = index + 1
             continue
-        elif index == 5 and distance_of_point_to_center > ring:
+        elif distance_of_point_to_center > ring:
             print("not within boundingbox " + str(index + 1))
             result_ring = -1
             continue
             
     theta = math.degrees(math.atan2(y - center, x - center))
-    
+    if theta < 0:
+        theta = theta + 360
     result_point_amount = -1
     
     for i in range(0, 20):

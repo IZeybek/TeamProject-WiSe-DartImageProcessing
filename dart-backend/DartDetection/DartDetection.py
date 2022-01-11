@@ -241,7 +241,7 @@ def process_images(image_a, image_b):
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
-    result = choose_dart_tip(dart_contour, points[0], point[1])
+    result = choose_dart_tip(dart_contour, points[0], points[1])
     return score_ssim, result, dart_contour_points
 
 def getResult(imageA, imageB):
@@ -284,23 +284,3 @@ def getResult(imageA, imageB):
     cv2.imshow("Diff", diff)
     cv2.imshow("Thresh", thresh)
     return result
-
-# main class for testing
-if __name__ == "__main__":
-    mode = 0
-
-    # load the two input images
-    imageA = cv2.imread("Links-dart.jpg")
-    imageB = cv2.imread("Links-empty.jpg")
-    if mode == 1:
-        print("Test Wrapper function:")
-
-        # wrapper function
-        score_ssim, result, dart_contour_points = process_images(imageA, imageB)
-
-        # draw result
-        print("SSIM: " + str(score_ssim))
-        cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-        cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
-        cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
-        cv2.waitKey(0)

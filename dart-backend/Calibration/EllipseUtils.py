@@ -155,7 +155,7 @@ def findSectorLines(edged, image_proc_img, calData):
     #Right
     lines = cv2.HoughLines(edged, 1, np.pi / 140, 105,100)
     
-    center= (400,300)
+    center = (400,300)
     horizontal_offset = 100
     vertical_offset = 100
     intersectLines = []
