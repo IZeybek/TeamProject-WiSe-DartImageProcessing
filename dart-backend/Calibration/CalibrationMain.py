@@ -155,7 +155,7 @@ def getEdges(tresh):
 def applyFilters(image_proc_img):
     cv2.imshow("original", image_proc_img)
     
-    image_proc_img = applyContrast(image_proc_img, 240, 145)
+    image_proc_img = applyContrast(image_proc_img, 300, 175)
     cv2.imshow("contrast", image_proc_img)
     blurred = cv2.GaussianBlur(image_proc_img, (3, 3), -1)
     # gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
@@ -273,7 +273,7 @@ def initRight(snapshot_cam_R, original_R):
     calData_R = CalibrationData()
     calData_R.angleZone_horizontal = ( -40 , -30)
     calData_R.angleZone_vertical  = (-160, -150)
-    calData_R.destinationPoints = [14, 4, 19, 9] # [0, 5, 10, 15]
+    calData_R.destinationPoints = [0, 10, 5, 15] # [0, 5, 10, 15]
     calData_R, transformed_image_R = initCalibration(calData_R, snapshot_cam_R, original_R)
     test = cv2.waitKey(0)
     if test == 1:

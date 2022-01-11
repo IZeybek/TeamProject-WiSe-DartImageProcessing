@@ -1,6 +1,7 @@
 # import the necessary packages
 from threading import Thread
 import cv2
+import time
 
 class VideoStream:
     """create new VideoStream Thread with helper functions.
@@ -64,6 +65,7 @@ class VideoStream:
             (self.grabbed, self.frame) = self.stream.read()
 
     def read(self):
+        time.sleep(5)
         """return the frame most recently read.
  
         Returns
