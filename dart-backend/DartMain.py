@@ -169,10 +169,9 @@ def test_dart_main_loop():
         time.sleep(4)
 
 if __name__ == "__main__":
-
     mode = "Test_Websocket_Server"
     if mode == "Ismael_test":
-        test_ismael()
+        dart_main_loop()
     elif mode == "Test_Dart_Detection":
         test_dart_detection()
     elif mode == "Test_Websocket_Server":
