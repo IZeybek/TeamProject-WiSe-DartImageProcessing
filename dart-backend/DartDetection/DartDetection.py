@@ -238,6 +238,8 @@ def process_images(image_a, image_b):
         dart_contour_points: a tuple which contains 2 points. These points define the bounding box around the dart.
     """
     gray_a, gray_b, thresh, diff, score_ssim = calc_image_difference(image_a, image_b)
+    
+    cv2.imshow("tresh", thresh)
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)

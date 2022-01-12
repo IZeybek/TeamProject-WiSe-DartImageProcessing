@@ -153,12 +153,14 @@ def findSectorLines(edged, image_proc_img, calData):
     #LEFT
     # lines = cv2.HoughLines(edged, 1, np.pi / 135, 100)
     #Right
-    lines = cv2.HoughLines(edged, 1, np.pi / 140, 105,100)
+    lines = cv2.HoughLines(edged, 1, np.pi / 145, 100,100)
     
     center = (400,300)
     horizontal_offset = 100
     vertical_offset = 100
     intersectLines = []
+    horizontal_lines = []
+    vertical_lines = []
     intersectLines_XY_coord = []
     ## sector angles important -> make accessible
     for line in lines:
@@ -175,11 +177,11 @@ def findSectorLines(edged, image_proc_img, calData):
         if theta > np.pi / 180 * calData.angleZone_horizontal[0] and theta < np.pi / 180 * calData.angleZone_horizontal[1]:
             cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)              
             intersectLines.append(line[0])
-            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+            horizontal_lines.append([(x1,y1),(x2,y2)])
         elif theta > np.pi / 180 * calData.angleZone_vertical[0] and theta < np.pi / 180 * calData.angleZone_vertical[1]:
             cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)     
             intersectLines.append(line[0])
-            intersectLines_XY_coord.append([(x1,y1),(x2,y2)])
+            vertical_lines.append([(x1,y1),(x2,y2)])
     
     # if len(intersectLines) == 2:
     #     x, y = intersection(intersectLines[0], intersectLines[1])
@@ -187,7 +189,8 @@ def findSectorLines(edged, image_proc_img, calData):
     #     x, y = segmented_intersections(intersectLines)    
 
     # cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), -1)
-    
+    intersectLines_XY_coord.append(horizontal_lines[0])
+    intersectLines_XY_coord.append(vertical_lines[0])
     
     return intersectLines_XY_coord, image_proc_img
 

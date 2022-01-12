@@ -37,7 +37,7 @@ def detect_segment(new_dart_coord, calData):
             print("between middle and outer " + str(index + 1))
             result_ring = index + 1
             continue
-        elif distance_of_point_to_center > ring:
+        elif index == 5 and distance_of_point_to_center > inner_ring:
             print("not within boundingbox " + str(index + 1))
             result_ring = -1
             continue
@@ -65,6 +65,8 @@ def detect_segment(new_dart_coord, calData):
                 result_point_amount = map_board_game_points[index] * 2
             elif result_ring == 5:
                 result_point_amount = map_board_game_points[index] * 3
+            elif result_ring == -1:
+                result_point_amount = -1
             else:
                 result_point_amount = map_board_game_points[index]
             

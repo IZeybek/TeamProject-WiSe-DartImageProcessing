@@ -26,8 +26,8 @@ def calibrateAll(snapshot_cam_R, snapshot_cam_L):
     original_L = snapshot_cam_L.copy()
     
     calData_L, transformed_image_L = calibrateLeft(snapshot_cam_L, original_L)
-    calData_R, transformed_image_R = calibrateRight(snapshot_cam_R, original_R)
     saveCalFile("calibrationData_L.pkl", calData_L)
+    calData_R, transformed_image_R = calibrateRight(snapshot_cam_R, original_R)
     saveCalFile("calibrationData_R.pkl", calData_R)
 
     return calData_R, transformed_image_R, calData_L, transformed_image_L
@@ -36,8 +36,9 @@ def calibrateRight(snapshot_cam_R, original_R):
     calData_R = CalibrationData()
     calData_R.angleZone_horizontal = ( -40 , -35)
     calData_R.angleZone_vertical  = (-160, -150)
-    calData_R.destinationPoints = [14, 4, 19, 9] # [0, 5, 10, 15]
+    calData_R.destinationPoints = [19, 9, 14, 4] # [0, 5, 10, 15]
     calData_R, transformed_image_R = getCalibration(calData_R, snapshot_cam_R, original_R)
+    calData_R.calImage = original_R
     cv2.imshow('transformed_R', transformed_image_R)
     waitForKey()
 
@@ -50,7 +51,7 @@ def calibrateLeft(snapshot_cam_L, original_L):
     calData_L.angleZone_vertical = (-50 , -25)
     calData_L.destinationPoints = [9, 19, 15, 5] # [0, 5, 10, 15]
     calData_L, transformed_image_L = getCalibration(calData_L, snapshot_cam_L, original_L)
-    
+    calData_L.calImage = original_L
     cv2.imshow('transformed_L', transformed_image_L)
     waitForKey()
 
@@ -61,19 +62,17 @@ def saveCalFile(filename, calData):
     pickle.dump(calData, calFile, 0)
     calFile.close()
 
-def readCalibrationData():
+def readCalibrationData(filename_R, filename_L):
 
-    imCalRGB_R = cv2.imread("Websocket_Server_Test_DATA/cam_R_empty.jpg")
-    imCalRGB_L = cv2.imread("Websocket_Server_Test_DATA/cam_L_empty.jpg")
     calData_L = None
     calData_R = None
-    if os.path.isfile("Websocket_Server_Test_DATA/calibrationData_R.pkl") and os.path.isfile("Websocket_Server_Test_DATA/calibrationData_L.pkl"):
+    if os.path.isfile(filename_R) and os.path.isfile(filename_L):
         try:
-            calFile = open('Websocket_Server_Test_DATA/calibrationData_R.pkl', 'rb')
+            calFile = open(filename_R, 'rb')
             calData_R = CalibrationData()
             calData_R = pickle.load(calFile)
             calFile.close()
-            calFile = open('Websocket_Server_Test_DATA/calibrationData_L.pkl', 'rb')
+            calFile = open(filename_L, 'rb')
             calData_L = CalibrationData()
             calData_L = pickle.load(calFile)
             calFile.close()
@@ -81,18 +80,19 @@ def readCalibrationData():
         except EOFError as err:
             print(err)
             return None
-
+    imCalRGB_R = calData_R.calImage
+    imCalRGB_L = calData_L.calImage
     #copy image for old calibration data
-    transformed_img_R = imCalRGB_R.copy()
-    transformed_img_L = imCalRGB_L.copy()
+    transformed_img_R = calData_R.calImage.copy()
+    transformed_img_L = calData_L.calImage.copy()
 
     transformed_img_R = cv2.warpPerspective(imCalRGB_R, calData_R.transformation_matrix, (800, 800))
     transformed_img_L = cv2.warpPerspective(imCalRGB_L, calData_L.transformation_matrix, (800, 800))
     draw_R = getNormilizedBoard(transformed_img_R, calData_R)
     draw_L = getNormilizedBoard(transformed_img_L, calData_L)
 
-    cv2.imshow("Left_Cam", draw_L)
-    cv2.imshow("Right_Cam", draw_R)
+    # cv2.imshow("Left_Cam", draw_L)
+    # cv2.imshow("Right_Cam", draw_R)
     return calData_L, draw_L, calData_R , draw_R
 
 def waitForKey():

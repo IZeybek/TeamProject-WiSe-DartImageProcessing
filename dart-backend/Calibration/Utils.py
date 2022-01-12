@@ -18,6 +18,7 @@ class CalibrationData:
         self.angleZone_horizontal = (0,0)
         self.angleZone_vertical = (0,0)
         self.destinationPoints = []
+        self.calImage = []
         self.transformation_matrix = []
 
 # line intersection
