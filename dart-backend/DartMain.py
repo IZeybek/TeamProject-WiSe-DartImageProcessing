@@ -22,31 +22,68 @@ def getVideoStream(src=0):
 
     return videoStream, snapshot_cam
 
-def test_ismael():
+def dart_main_loop():
     videoStream_L, snapshot_cam_L = getVideoStream(src=0)
     videoStream_R, snapshot_cam_R = getVideoStream(src=1)
 
     cal_data_R, transformed_image_R, cal_data_L, transformed_image_L = calibrateAll(snapshot_cam_R, snapshot_cam_L)
 
-    imageA = cv2.imread("Links-dart.jpg")
-    imageB = cv2.imread("Links-empty.jpg")
+    # load reference image
+    reference_image = snapshot_cam_R.copy()
 
-    result = getResult(imageA, imageB)
+    # calibration data
+    calData_L = None
+    draw_L = None
+    calData_R = None
+    draw_R = None
 
-    new_dart_coord = showLatestDartLocationOnBoard(transformed_image_L, result, cal_data_L)
-    game_point_result = detect_segment(new_dart_coord, cal_data_L)
-    cv2.putText(transformed_image_L, str(game_point_result), (int(new_dart_coord[0]), int(new_dart_coord[1])),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                2, (255, 0, 255), 4, cv2.LINE_AA)
-    cv2.imshow("player Points detected - LEFT", transformed_image_L)
+    # main Loop
+    turns = 200
+    while turns != 0:
+        # calibrate only if websocket thread Event is not set
+        if not websocket.CALIBRATION_DONE.is_set():
+            # TODO: add new Calibration instead of loading
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData()
+            websocket.CALIBRATION_DONE.set()
 
-    new_dart_coord = showLatestDartLocationOnBoard(transformed_image_R, result, cal_data_R)
-    game_point_result = detect_segment(new_dart_coord, cal_data_R)
-    cv2.putText(transformed_image_R, str(game_point_result), (int(new_dart_coord[0]), int(new_dart_coord[1])),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                2, (255, 0, 255), 4, cv2.LINE_AA)
-    cv2.imshow("player Points detected -RIGHT", transformed_image_R)
-    cv2.waitKey(0)
+        # reset reference image
+        websocket.Global_LOCK.acquire()
+        if websocket.IMAGE_COUNT == 0:
+            reference_image = snapshot_cam_R.copy()
+            test_image_idx = 0
+        websocket.Global_LOCK.release()
+
+        # get new image and calculate dart tip
+        _, camRGB = videoStream_R.read()
+        snapshot_cam = camRGB.copy()
+        test_image = snapshot_cam
+        score_ssim, result, dart_contour_points = process_images(reference_image, test_image)
+
+        # get dart tip value if image difference is high enough
+        if score_ssim < 0.99:
+            # calc result value
+            new_dart_coord = showLatestDartLocationOnBoard(draw_R, result, calData_R)
+            game_point_result = detect_segment(new_dart_coord, calData_R)
+            print("Detected dart. The score is " + str(game_point_result) + " Points!")
+
+            # send result
+            websocket.send_changes({"request": 1, "value": game_point_result})
+
+            # increase count, replace reference image
+            websocket.increase_image_count()
+            reference_image = test_image
+
+        cv2.waitKey(10)
+
+        # check if round is done and wait if true and reset reference images afterwards
+        websocket.Global_LOCK.acquire()
+        if websocket.IMAGE_COUNT >= 3:
+            websocket.Global_LOCK.release()
+            websocket.ROUND_DONE.wait()
+            reference_image = snapshot_cam_R.copy()
+            websocket.ROUND_DONE.clear()
+        else:
+            websocket.Global_LOCK.release()
 
 def test_dart_detection():
     imageA = cv2.imread("Links-dart.jpg")
