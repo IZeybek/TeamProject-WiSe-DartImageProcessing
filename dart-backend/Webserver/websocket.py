@@ -17,11 +17,10 @@ def increase_image_count():
     Global_LOCK.release()
 
 def reset_image_count():
-    global IMAGE_COUNT, Global_LOCK, IMAGE_RESET
+    global IMAGE_COUNT, Global_LOCK
     Global_LOCK.acquire()
     IMAGE_COUNT = 0
     Global_LOCK.release()
-    IMAGE_RESET.set()
 
 def start_server(ip, port):
     global WEBSOCKET

@@ -9,8 +9,6 @@ import Webserver.websocket as websocket
 import threading
 import time
 
-
-
 def dart_main_loop():
     videoStream_L, snapshot_cam_L = getVideoStream(src=0)
     videoStream_R, snapshot_cam_R = getVideoStream(src=1)
@@ -31,13 +29,12 @@ def dart_main_loop():
     websocket.CALIBRATION_DONE.set()
     #snapshot_cam_L = calData_L.calImage.copy()
     # main Loop
-    turns = 200
-    while turns != 0:
+    while True:
         # calibrate only if websocket thread Event is not set
-        #if not websocket.CALIBRATION_DONE.is_set():
-        # TODO: add new Calibration instead of loading
-        #    calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl','calibrationData_R.pkl')
-        #    websocket.CALIBRATION_DONE.set()
+        if not websocket.CALIBRATION_DONE.is_set():
+           # TODO: add new Calibration instead of loading
+           calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl','calibrationData_R.pkl')
+           websocket.CALIBRATION_DONE.set()
             
         # reset reference image
         websocket.Global_LOCK.acquire()
@@ -112,11 +109,11 @@ def drawRectangle(test_image, result, dart_contour_points):
 def test_dart_main_loop():
     time.sleep(5)
     # load test images
-    empty_dart_board = cv2.imread("loop_test/cam_R_empty.jpg")
+    empty_dart_board = cv2.imread("loop_specialcase_test/cam_L_empty.jpg")
     reference_image = empty_dart_board.copy()
-    images = [cv2.imread("loop_test/cam_R_dart1.jpg"), cv2.imread(
-        "loop_test/cam_R_dart2.jpg"),
-              cv2.imread("loop_test/cam_R_dart3.jpg")]
+    images = [cv2.imread("loop_specialcase_test/cam_L_dart1.jpg"), cv2.imread(
+        "loop_specialcase_test/cam_L_dart2.jpg"),
+              cv2.imread("loop_specialcase_test/cam_L_dart3.jpg")]
     test_image_idx = 0
 
     # calibration data
@@ -131,7 +128,7 @@ def test_dart_main_loop():
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             # TODO: add new Calibration instead of loading
-            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_test/calibrationData_L.pkl','loop_test/calibrationData_R.pkl')
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_specialcase_test/calibrationData_L.pkl','loop_specialcase_test/calibrationData_R.pkl')
             websocket.CALIBRATION_DONE.set()
 
         # reset reference image
@@ -206,7 +203,7 @@ if __name__ == "__main__":
         videoStream_R, snapshot_cam_R = getVideoStream(src=1)
         empty_L = snapshot_cam_L.copy()
         empty_R = snapshot_cam_R.copy()
-        cal_data_L, transformed_image_L, cal_data_R, transformed_image_R  = calibrateAll(empty_L, empty_R)
+        cal_data_L, transformed_image_L, cal_data_R, transformed_image_R  = calibrateAll(empty_L, empty_R, 'loop_specialcase_test/calibrationData_L.pkl', 'loop_specialcase_test/calibrationData_R.pkl')
         cv2.imwrite("loop_test/cam_L_empty.jpg", snapshot_cam_L)
         cv2.imwrite("loop_test/cam_R_empty.jpg", snapshot_cam_R)
         _,snapshot_cam_L = videoStream_L.read()

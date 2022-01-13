@@ -19,9 +19,11 @@ def getCalibration(calData, snapshot, original):
     return calData, transformed_image
     
 def calibrateAll(snapshot_cam_L, snapshot_cam_R, filename_L='Calibration_standard_output/calibrationData_L.pkl', filename_R='Calibration_standard_output/calibrationData_R.pkl'):
+    image_L = filename_L.replace(".pkl", ".jpg")
+    image_R = filename_R.replace(".pkl", ".jpg")
 
-    cv2.imwrite("cam_R_empty.jpg", snapshot_cam_R)
-    cv2.imwrite("cam_L_empty.jpg", snapshot_cam_L)
+    cv2.imwrite(image_L, snapshot_cam_L)
+    cv2.imwrite(image_R, snapshot_cam_R)
 
     original_R = snapshot_cam_R.copy()
     original_L = snapshot_cam_L.copy()
