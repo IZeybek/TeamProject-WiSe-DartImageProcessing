@@ -3,6 +3,7 @@ import os.path
 from .Utils import *
 from .EllipseUtils import *
 from .PreProcessImageUtils import *
+from .VideoCapture import *
 import pickle
 
 def getCalibration(calData, snapshot, original):
@@ -17,20 +18,20 @@ def getCalibration(calData, snapshot, original):
     calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
     return calData, transformed_image
     
-def calibrateAll(snapshot_cam_R, snapshot_cam_L):
+def calibrateAll(snapshot_cam_L, snapshot_cam_R, filename_L='Calibration_standard_output/calibrationData_L.pkl', filename_R='Calibration_standard_output/calibrationData_R.pkl'):
 
-    cv2.imwrite("cam_R.jpg", snapshot_cam_R)
-    cv2.imwrite("cam_L.jpg", snapshot_cam_L)
+    cv2.imwrite("cam_R_empty.jpg", snapshot_cam_R)
+    cv2.imwrite("cam_L_empty.jpg", snapshot_cam_L)
 
     original_R = snapshot_cam_R.copy()
     original_L = snapshot_cam_L.copy()
     
     calData_L, transformed_image_L = calibrateLeft(snapshot_cam_L, original_L)
-    saveCalFile("calibrationData_L.pkl", calData_L)
+    saveCalFile(filename_L, calData_L)
     calData_R, transformed_image_R = calibrateRight(snapshot_cam_R, original_R)
-    saveCalFile("calibrationData_R.pkl", calData_R)
+    saveCalFile(filename_R, calData_R)
 
-    return calData_R, transformed_image_R, calData_L, transformed_image_L
+    return calData_L, transformed_image_L, calData_R, transformed_image_R
 
 def calibrateRight(snapshot_cam_R, original_R):
     calData_R = CalibrationData()
@@ -62,38 +63,41 @@ def saveCalFile(filename, calData):
     pickle.dump(calData, calFile, 0)
     calFile.close()
 
-def readCalibrationData(filename_R, filename_L):
+def readCalibrationData(filename_L, filename_R):
 
     calData_L = None
     calData_R = None
-    if os.path.isfile(filename_R) and os.path.isfile(filename_L):
+    if os.path.isfile(filename_L) and os.path.isfile(filename_R):
         try:
-            calFile = open(filename_R, 'rb')
-            calData_R = CalibrationData()
-            calData_R = pickle.load(calFile)
-            calFile.close()
             calFile = open(filename_L, 'rb')
             calData_L = CalibrationData()
             calData_L = pickle.load(calFile)
+            calFile.close()
+
+            calFile = open(filename_R, 'rb')
+            calData_R = CalibrationData()
+            calData_R = pickle.load(calFile)
             calFile.close()
         #corrupted file
         except EOFError as err:
             print(err)
             return None
-    imCalRGB_R = calData_R.calImage
-    imCalRGB_L = calData_L.calImage
-    #copy image for old calibration data
-    transformed_img_R = calData_R.calImage.copy()
-    transformed_img_L = calData_L.calImage.copy()
+        imCalRGB_R = calData_R.calImage
+        imCalRGB_L = calData_L.calImage
+        #copy image for old calibration data
+        transformed_img_R = calData_R.calImage.copy()
+        transformed_img_L = calData_L.calImage.copy()
 
-    transformed_img_R = cv2.warpPerspective(imCalRGB_R, calData_R.transformation_matrix, (800, 800))
-    transformed_img_L = cv2.warpPerspective(imCalRGB_L, calData_L.transformation_matrix, (800, 800))
-    draw_R = getNormilizedBoard(transformed_img_R, calData_R)
-    draw_L = getNormilizedBoard(transformed_img_L, calData_L)
+        transformed_img_R = cv2.warpPerspective(imCalRGB_R, calData_R.transformation_matrix, (800, 800))
+        transformed_img_L = cv2.warpPerspective(imCalRGB_L, calData_L.transformation_matrix, (800, 800))
+        draw_R = getNormilizedBoard(transformed_img_R, calData_R)
+        draw_L = getNormilizedBoard(transformed_img_L, calData_L)
 
-    # cv2.imshow("Left_Cam", draw_L)
-    # cv2.imshow("Right_Cam", draw_R)
-    return calData_L, draw_L, calData_R , draw_R
+        # cv2.imshow("Left_Cam", draw_L)
+        # cv2.imshow("Right_Cam", draw_R)
+        return calData_L, draw_L, calData_R , draw_R
+    else:
+        raise Exception('no calibration found')
 
 def waitForKey():
     keyInput = cv2.waitKey(0)
@@ -101,11 +105,8 @@ def waitForKey():
         cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    print("Welcome to darts!")
     
-    # cam_R = VideoStream(src=1).start() 
-    # cam_L = VideoStream(src=0).start()
-    
-    cam_R = cv2.imread("cam_R.jpg") #
-    cam_L = cv2.imread("cam_R.jpg") # 
-    calibrateAll(cam_R, cam_L)
+    videoStream_L, snapshot_cam_L = getVideoStream(src=0)
+    videoStream_R, snapshot_cam_R = getVideoStream(src=1)
+
+    cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(snapshot_cam_L, snapshot_cam_R)

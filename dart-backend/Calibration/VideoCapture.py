@@ -88,3 +88,16 @@ class VideoStream:
         """
         # indicate that the thread should be stopped
         self.stopped = True
+        
+def getVideoStream(src=0):
+    try:
+
+        videoStream = VideoStream(src).start()
+        _, camRGB = videoStream.initRead()
+        snapshot_cam = camRGB.copy()
+
+    except:
+        print("Could not init camaras")
+        return None
+
+    return videoStream, snapshot_cam

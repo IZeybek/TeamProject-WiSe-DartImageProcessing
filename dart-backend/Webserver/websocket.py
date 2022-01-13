@@ -61,7 +61,7 @@ async def handle_requests(websocket, path):
                 await websocket.send(json_response)
                 print("Answered - Calibration Done!")
 
-            elif json_message["request"] == 12:
+            elif json_message["request"] == 13:
                 # handle start of next round
                 reset_image_count()
                 ROUND_DONE.set()
