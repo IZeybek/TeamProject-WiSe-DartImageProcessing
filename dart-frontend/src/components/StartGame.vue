@@ -23,6 +23,7 @@
                 >
                   <v-text-field
                     v-model="item.name"
+                    v-if="item" :load="log(item.name)"
                     label="enter playerName"
                     outlined
                   ></v-text-field>
@@ -95,13 +96,15 @@ export default Vue.extend({
       for (let i = 0; i < this.player_count; i++) {
         players.push({ name: "player" + (i + 1) });
       }
-
       this.players = players;
       return players;
     },
     startGame() {
         this.game = 1;
     },
+    log(name){
+      console.log(name)
+    }
   },
 });
 </script>

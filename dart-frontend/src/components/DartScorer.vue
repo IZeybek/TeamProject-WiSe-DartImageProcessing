@@ -25,6 +25,12 @@
         </div>
         <!--div @mouseover="showPencil = true"  @mouseleave="showPencil = false"-->
         <img v-show="showPencil" @click="showInput=true" @dblclick="showInput=false"
+            src="../assets/close.png"
+            width="30"
+            height="30"
+            style="padding: 2px;margin-left:38px;"
+          />
+          <img v-show="showPencil" @click="showInput=true" @dblclick="showInput=false"
             src="../assets/pencil.png"
             width="30"
             height="30"

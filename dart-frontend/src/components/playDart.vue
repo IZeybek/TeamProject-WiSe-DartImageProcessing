@@ -32,9 +32,9 @@
           <div class="v-sheet theme--light rounded-lg"
             style="min-height: 268px">
           <dart-scorer :dartScores="dartScores"></dart-scorer>
-          <div class="head justify-center">
-            <v-btn v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
-            <v-btn v-show="win" @click="init()" small dark>newGame?</v-btn>
+          <div class="justify-center" style ="text-align:center">
+            <v-btn style ="" v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="win" @click="init()" small dark>New Game?</v-btn>
           </div>
           </div>
         </div>
