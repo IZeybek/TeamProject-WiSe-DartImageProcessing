@@ -16,14 +16,13 @@
                   ></v-text-field>
                 </v-card-actions>
                 <v-card-actions
-                  v-for="(item, index) in getCount()"
+                  v-for="(item, index) in reversedMessage"
                   :key="index"
                   class="justify-center"
                   max-width="250"
                 >
                   <v-text-field
                     v-model="item.name"
-                    v-if="item" :load="log(item.name)"
                     label="enter playerName"
                     outlined
                   ></v-text-field>
@@ -85,15 +84,20 @@ export default Vue.extend({
     gamestarted: false,
     score: 301,
   }),
+    computed: {
+    reversedMessage: function () {
+      return this.getCount(this.player_count)
+    }
+  },
   methods: {
     reset() {
       this.game = 0;
       this.players = 0;
       this.gamestarted = false;
     },
-    getCount() {
+    getCount(playercount) {
       const players = [];
-      for (let i = 0; i < this.player_count; i++) {
+      for (let i = 0; i < playercount; i++) {
         players.push({ name: "player" + (i + 1) });
       }
       this.players = players;
