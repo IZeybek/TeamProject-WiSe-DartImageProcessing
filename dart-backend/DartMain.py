@@ -85,20 +85,19 @@ def waitForKey():
         cv2.destroyAllWindows()
 
 def test_dart_detection():
-    imageA = cv2.imread("Links-dart.jpg")
-    imageB = cv2.imread("Links-empty.jpg")
-    if mode == 1:
-        print("Test Wrapper function:")
+    imageA = cv2.imread("loop_test\cam_L_empty.jpg")
+    imageB = cv2.imread("loop_test\cam_L_dart1.jpg")
+    print("Test Wrapper function:")
 
-        # wrapper function
-        score_ssim, result, dart_contour_points = process_images(imageA, imageB)
+    # wrapper function
+    score_ssim, result, dart_contour_points = process_images(imageA, imageB)
 
-        # draw result
-        print("SSIM: " + str(score_ssim))
-        cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-        cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
-        cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
-        cv2.waitKey(0)
+    # draw result
+    print("SSIM: " + str(score_ssim))
+    cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+    cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
+    cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
+    cv2.waitKey(0)
         
 def drawRectangle(test_image, result, dart_contour_points):
     rect = test_image.copy()
@@ -178,15 +177,17 @@ def test_dart_main_loop():
         time.sleep(4)
 
 if __name__ == "__main__":
-    mode = "Test_Websocket_Server"
-    if mode == "Ismael_test":
+    mode = "Test_Dart_Main_Loop"
+    if mode == "Main_Loop":
         dart_main_loop()
     elif mode == "Test_Dart_Detection":
         test_dart_detection()
+    elif mode == "Test_Dart_Main_Loop":
+        test_dart_main_loop()
     elif mode == "Test_Websocket_Server":
         # start main routine in new Thread
-        websocket_server = threading.Thread(target=test_dart_main_loop)
-        websocket_server.start()
+        main_loop = threading.Thread(target=test_dart_main_loop)
+        main_loop.start()
 
         # start websocket
         websocket.start_server("localhost", 9000)

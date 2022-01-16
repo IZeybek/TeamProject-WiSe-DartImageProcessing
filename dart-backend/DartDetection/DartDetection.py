@@ -182,7 +182,7 @@ def calc_bounding_box_intersection(a, b, p, slope):
 
     return new_points
 
-def choose_dart_tip(contour, point_1, point_2):
+def choose_dart_tip(thresh, bounding_box, point_1, point_2):
     """Calculate which of the two possible dart_tip locations is correct.
 
     Parameters
@@ -201,13 +201,17 @@ def choose_dart_tip(contour, point_1, point_2):
     """
     mean_dist_p1 = 0
     mean_dist_p2 = 0
+    count = 0
+    dart_points = cv2.findNonZero(thresh)
 
     # calc mean dist from p in countour to point_1 and point_2
-    for p in contour:
-        mean_dist_p1 += ((((p[0][0] - point_1[0]) ** 2) + ((p[0][1] - point_1[1]) ** 2)) ** 0.5)
-        mean_dist_p2 += ((((p[0][0] - point_2[0]) ** 2) + ((p[0][1] - point_2[1]) ** 2)) ** 0.5)
-    mean_dist_p1 = mean_dist_p1 / contour.shape[0]
-    mean_dist_p2 = mean_dist_p2 / contour.shape[0]
+    for p in dart_points:
+        if bounding_box[0][0] <= p[0][0] <= bounding_box[1][0] and bounding_box[0][1] <= p[0][1] <= bounding_box[1][1]:
+            mean_dist_p1 += ((((p[0][0] - point_1[0]) ** 2) + ((p[0][1] - point_1[1]) ** 2)) ** 0.5)
+            mean_dist_p2 += ((((p[0][0] - point_2[0]) ** 2) + ((p[0][1] - point_2[1]) ** 2)) ** 0.5)
+            count += 1
+    mean_dist_p1 = mean_dist_p1 / count
+    mean_dist_p2 = mean_dist_p2 / count
 
     # print("mean_dist_p1: " + str(mean_dist_p1))
     # print("mean_dist_p2: " + str(mean_dist_p2))
@@ -238,12 +242,13 @@ def process_images(image_a, image_b):
         dart_contour_points: a tuple which contains 2 points. These points define the bounding box around the dart.
     """
     gray_a, gray_b, thresh, diff, score_ssim = calc_image_difference(image_a, image_b)
-    
+    if (score_ssim == 1):
+        return score_ssim, None, None
     cv2.imshow("tresh", thresh)
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
-    result = choose_dart_tip(dart_contour, points[0], points[1])
+    result = choose_dart_tip(thresh, dart_contour_points, points[0], points[1])
     return score_ssim, result, dart_contour_points
 
 def getResult(imageA, imageB):
