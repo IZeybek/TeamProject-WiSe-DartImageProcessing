@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
-from .Contrast import applyContrast
-from .EllipseUtils import smoothEllipse
+from dart_backend.Components.Calibration.Contrast import applyContrast
+from dart_backend.Components.Calibration.EllipseUtils import smoothEllipse
 
 def locateRedSpots(img):
     

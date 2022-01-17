@@ -1,15 +1,11 @@
-import sys
-import cv2
-from Calibration.CalibrationMain import *
-from DartDetection.DartLocation import *
-from DartDetection.DartDetection import *
-
-from Calibration.VideoCapture import *
-import Webserver.websocket as websocket
-import threading
+from dart_backend.Components.Calibration.CalibrationMain import *
+from dart_backend.Components.DartDetection.DartLocation import *
+from dart_backend.Components.DartDetection.DartDetection import *
+from dart_backend.Components.Calibration.VideoCapture import *
 import time
 
-def dart_main_loop():
+
+def one_camera_loop(websocket):
     videoStream_L, snapshot_cam_L = getVideoStream(src=0)
     videoStream_R, snapshot_cam_R = getVideoStream(src=1)
 
@@ -27,16 +23,16 @@ def dart_main_loop():
     # TODO: add new Calibration instead of loading
     calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl', 'calibrationData_R.pkl')
     websocket.CALIBRATION_DONE.set()
-    #snapshot_cam_L = calData_L.calImage.copy()
+    # snapshot_cam_L = calData_L.calImage.copy()
 
     # main Loop
     while True:
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
-           # TODO: add new Calibration instead of loading
-           calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl','calibrationData_R.pkl')
-           websocket.CALIBRATION_DONE.set()
-            
+            # TODO: add new Calibration instead of loading
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl', 'calibrationData_R.pkl')
+            websocket.CALIBRATION_DONE.set()
+
         # reset reference image
         websocket.Global_LOCK.acquire()
         if websocket.IMAGE_COUNT == 0:
@@ -52,7 +48,6 @@ def dart_main_loop():
 
         # get dart tip value if image difference is high enough
         if mse > 40:
-
             # draw images
             cv2.imshow("reference_image.jpg", reference_image)
             cv2.rectangle(rectangle, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
@@ -71,7 +66,6 @@ def dart_main_loop():
             websocket.increase_image_count()
             reference_image = snapshot_cam
 
-        
         waitForKey()
 
         # check if round is done and wait if true and reset reference images afterwards
@@ -84,32 +78,21 @@ def dart_main_loop():
         else:
             websocket.Global_LOCK.release()
 
+
 def waitForKey():
     keyInput = cv2.waitKey(0)
     if keyInput == 1:
         cv2.destroyAllWindows()
 
-def test_dart_detection():
-    imageA = cv2.imread("loop_test/cam_L_empty.jpg")
-    imageB = cv2.imread("loop_test/cam_L_dart1.jpg")
 
-    # wrapper function
-    score_ssim, result, dart_contour_points = process_images(imageA, imageB)
-
-    # draw result
-    print("SSIM: " + str(score_ssim))
-    cv2.rectangle(imageA, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-    cv2.circle(imageA, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
-    cv2.imshow("Original", cv2.resize(imageA, (1920, 1080)))
-    cv2.waitKey(0)
-        
 def drawRectangle(test_image, result, dart_contour_points):
     rect = test_image.copy()
     cv2.rectangle(rect, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
     cv2.circle(rect, (result[0], result[1]), radius=5, color=(0, 255, 255), thickness=-1)
     cv2.imshow("rect", rect)
 
-def test_dart_main_loop():
+
+def test_one_camera_loop(websocket):
     time.sleep(5)
     # load test images
     empty_dart_board = cv2.imread("loop_test/cam_L_empty.jpg")
@@ -131,7 +114,8 @@ def test_dart_main_loop():
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             # TODO: add new Calibration instead of loading
-            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_test/calibrationData_L.pkl','loop_test/calibrationData_R.pkl')
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_test/calibrationData_L.pkl',
+                                                                       'loop_test/calibrationData_R.pkl')
             websocket.CALIBRATION_DONE.set()
 
         # reset reference image
@@ -180,50 +164,3 @@ def test_dart_main_loop():
 
         # sleep 4 sec for next calc
         time.sleep(4)
-
-if __name__ == "__main__":
-    mode = "Test_Dart_Detection"
-    if mode == "Main_Loop":
-        dart_main_loop()
-    elif mode == "Test_Dart_Detection":
-        test_dart_detection()
-    elif mode == "Test_Dart_Main_Loop":
-        test_dart_main_loop()
-    elif mode == "Test_Websocket_Server":
-        # start main routine in new Thread
-        main_loop = threading.Thread(target=test_dart_main_loop)
-        main_loop.start()
-
-        # start websocket
-        websocket.start_server("localhost", 9000)
-    
-    elif mode == "Calibrate":
-        videoStream_L, snapshot_cam_L = getVideoStream(src=0)
-        videoStream_R, snapshot_cam_R = getVideoStream(src=1)
-
-        cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(snapshot_cam_L, snapshot_cam_R)
-    
-    elif mode == "take_snapshots":
-        
-        videoStream_L, snapshot_cam_L = getVideoStream(src=0)
-        videoStream_R, snapshot_cam_R = getVideoStream(src=1)
-        empty_L = snapshot_cam_L.copy()
-        empty_R = snapshot_cam_R.copy()
-        cal_data_L, transformed_image_L, cal_data_R, transformed_image_R  = calibrateAll(empty_L, empty_R, 'loop_specialcase_test/calibrationData_L.pkl', 'loop_specialcase_test/calibrationData_R.pkl')
-        cv2.imwrite("loop_test/cam_L_empty.jpg", snapshot_cam_L)
-        cv2.imwrite("loop_test/cam_R_empty.jpg", snapshot_cam_R)
-        _,snapshot_cam_L = videoStream_L.read()
-        _,snapshot_cam_R = videoStream_R.read()
-        
-        cv2.imwrite("loop_test/cam_L_dart1.jpg", snapshot_cam_L)
-        cv2.imwrite("loop_test/cam_R_dart1.jpg", snapshot_cam_R)
-        _,snapshot_cam_L = videoStream_L.read()
-        _,snapshot_cam_R = videoStream_R.read()
-        
-        cv2.imwrite("loop_test/cam_L_dart2.jpg", snapshot_cam_L)
-        cv2.imwrite("loop_test/cam_R_dart2.jpg", snapshot_cam_R)
-        _,snapshot_cam_L = videoStream_L.read()
-        _,snapshot_cam_R = videoStream_R.read()
-        
-        cv2.imwrite("loop_test/cam_L_dart3.jpg", snapshot_cam_L)
-        cv2.imwrite("loop_test/cam_R_dart3.jpg", snapshot_cam_R)

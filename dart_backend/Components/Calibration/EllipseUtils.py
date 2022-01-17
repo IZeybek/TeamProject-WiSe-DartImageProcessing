@@ -1,7 +1,7 @@
 import cv2 
 import numpy as np
 import math
-from .Utils import *
+from dart_backend.Components.Calibration.Utils import *
 
 def getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img):
     x = Ellipse.x
