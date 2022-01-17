@@ -66,7 +66,8 @@ export default {
       players: [],
       correct: "",
       playerCount: 0,
-      connection: null,
+      websocket:null,
+      pointsweb:[],
       currentPlayer: {
         name: "player.name",
         score: 301,
@@ -90,7 +91,10 @@ export default {
     this.currentPlayer = this.players[0]
     let temp_player=this.players.shift()
     this.players.push(temp_player)
-    // this.createWebsocket()
+    this.createWebSocket()
+    setTimeout(() => { this.websocket.send(JSON.stringify({
+        "request": "10"
+        })) }, 2000);
   },
   methods: {
     changePlayer() {
@@ -113,7 +117,7 @@ export default {
     init() {
       const darts = [];
       for (let i = 0; i < 3; i++) {
-        darts.push({score:5,}); // some changes for testing
+        darts.push({score:0,}); // some changes for testing
         // if (i == 0) {
         //   darts.push({
         //     score: 5,
@@ -151,13 +155,29 @@ export default {
         alert("try again")
       }
     },
-    createWebsocket() {
-      this.connection = new WebSocket("ws://127.0.0.1:6969");
-      console.log(this.connection);
-      this.connection.send("hello");
+    createWebSocket() {
+      this.websocket = new WebSocket("ws://127.0.0.1:9000")
+      this.websocket.onopen =()=>{
+        console.log("Connected to Backend")
+      }
+      this.websocket.onclose = function() {
+        console.log("connection with websocket closed")
+      }
+      this.websocket.onerror =function(error) {
+        console.log(error)
+        console.log("WebSocket is closed now."+error);
+      }
+      this.websocket.onmessage = function (e) {
+        let number = JSON.parse(e.data).value
+        const darts = [];
+        console.log(number)
+        // if(typeof e.data ==="string") {
+        //   let json = JSON.parse(e.data);
+        // }
+      }
     },
     callibration(){
-      console.log("Test")
+      console.log(this.serverscore)
     }
   },
 };

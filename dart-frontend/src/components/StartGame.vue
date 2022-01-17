@@ -118,25 +118,7 @@ export default Vue.extend({
       console.log(name)
     },
     
-    createWebSocket() {
-      this.websocket = new WebSocket("ws://127.0.0.1:9000")
-      this.websocket.onopen =()=>{
-        console.log("Connected to Backend")
-      }
-      this.websocket.onclose = function() {
-        console.log("connection with websocket closed")
-      }
-      this.websocket.onerror =function(error) {
-        console.log(error)
-        console.log("WebSocket is closed now."+error);
-      }
-      this.websocket.onmessage = function (e) {
-        console.log(JSON.parse(e.data))
-        if(typeof e.data ==="string") {
-          let json = JSON.parse(e.data);
-        }
-      }
-    },
+
   },
 });
 </script>
