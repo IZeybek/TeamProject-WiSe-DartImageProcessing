@@ -6,7 +6,7 @@ import threading
 import time
 
 if __name__ == "__main__":
-    mode = "Static_Image_Test_One_Camera_Loop"
+    mode = "Static_Image_Test_Dual_Camera_Loop"
 
     # Single Camera Mode
     if mode == "Test_One_Camera_Loop":
@@ -35,6 +35,8 @@ if __name__ == "__main__":
         test.test_dart_detection()
     elif mode == "Calibrate":
         test.test_calibration()
+    elif mode == "Calibrate2":
+        test.test_calibration_2("loop_specialcase_test/calibrationData_L.jpg", "loop_specialcase_test/calibrationData_R.jpg")
     elif mode == "take_snapshots":
-        test.test_calibration()
+        test.take_snapshots()
         

@@ -95,11 +95,11 @@ def drawRectangle(test_image, result, dart_contour_points):
 def test_one_camera_loop(websocket):
     time.sleep(5)
     # load test images
-    empty_dart_board = cv2.imread("loop_test/cam_L_empty.jpg")
+    empty_dart_board = cv2.imread("loop_specialcase_test/cam_L_empty.jpg")
     reference_image = empty_dart_board.copy()
-    images = [cv2.imread("loop_test/cam_L_dart1.jpg"), cv2.imread(
-        "loop_test/cam_L_dart2.jpg"),
-              cv2.imread("loop_test/cam_L_dart3.jpg")]
+    images = [cv2.imread("loop_specialcase_test/cam_L_dart1.jpg"),
+              cv2.imread("loop_specialcase_test/cam_L_dart2.jpg"),
+              cv2.imread("loop_specialcase_test/cam_L_dart3.jpg")]
     test_image_idx = 0
 
     # calibration data
@@ -114,8 +114,8 @@ def test_one_camera_loop(websocket):
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             # TODO: add new Calibration instead of loading
-            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_test/calibrationData_L.pkl',
-                                                                       'loop_test/calibrationData_R.pkl')
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData('loop_specialcase_test/calibrationData_L.pkl',
+                                                                       'loop_specialcase_test/calibrationData_R.pkl')
             websocket.CALIBRATION_DONE.set()
 
         # reset reference image

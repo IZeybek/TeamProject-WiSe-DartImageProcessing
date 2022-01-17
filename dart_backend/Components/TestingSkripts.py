@@ -49,3 +49,9 @@ def test_calibration():
     videoStream_R, snapshot_cam_R = getVideoStream(src=1)
 
     cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(snapshot_cam_L, snapshot_cam_R)
+
+
+def test_calibration_2(path_L, path_R):
+    image_L = cv2.imread(path_L)
+    image_R = cv2.imread(path_R)
+    cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(image_L, image_R)
