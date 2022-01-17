@@ -251,7 +251,7 @@ def process_images(image_a, image_b):
     result = choose_dart_tip(thresh, dart_contour_points, points[0], points[1])
     return mse, result, dart_contour_points
 
-def getResult(imageA, imageB):
+def getTestResult(imageA, imageB):
     print("Test functions:")
     # preprocess image
     grayA, grayB, thresh, diff, score_ssim = calc_image_difference(imageA, imageB)
@@ -291,3 +291,10 @@ def getResult(imageA, imageB):
     cv2.imshow("Diff", diff)
     cv2.imshow("Thresh", thresh)
     return result
+
+def choose_better_dart(dart1, dart2, contour1, contour2):
+    if (contour1[0][0] - contour1[1][0]) * (contour1[0][1] - contour1[1][1])\
+            > (contour2[0][0] - contour2[1][0]) * (contour2[0][1] - contour2[1][1]):
+        return dart1
+    else:
+        return dart2
