@@ -109,6 +109,9 @@ export default {
         let temp_player = this.currentPlayer
         this.$root.$refs.PlayerList.popout(temp_player);
       }
+      for(let i = 0; i < 3; i++) {
+        this.dartScores[i].score = 0
+      }
       this.websocket.send(JSON.stringify({
         "request": 13
         }))
