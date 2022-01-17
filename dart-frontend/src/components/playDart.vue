@@ -76,16 +76,16 @@ export default {
       dartScores: [],
     };
   },
-  filters: {
-    totext(serverscore) {
-      if (serverscore == 0) {
-        return "";
-      }
-      if (serverscore == 0) {
-        return serverscore;
-      }
-    },
-  },
+   filters: {
+     totext(serverscore) {
+       if (serverscore == 0) {
+         return "";
+       }
+       if (serverscore == 0) {
+         return serverscore;
+       }
+     },
+   },
   created() {
     this.init();
     this.currentPlayer = this.players[0]
@@ -93,7 +93,7 @@ export default {
     this.players.push(temp_player)
     this.createWebSocket()
     setTimeout(() => { this.websocket.send(JSON.stringify({
-        "request": "10"
+        "request": 11
         })) }, 2000);
   },
   methods: {
@@ -167,11 +167,17 @@ export default {
         console.log(error)
         console.log("WebSocket is closed now."+error);
       }
-      this.websocket.onmessage = function (e) {
-        let number = JSON.parse(e.data).value
-        const darts = [];
+      this.websocket.onmessage = (e) => {
+        let content = JSON.parse(e.data)
+        let number = content.value
         console.log(number)
-        // if(typeof e.data ==="string") {
+        
+        this.serverscore = number
+        this.dartScores[0].score = number
+        //this.$data.serverscore = number;
+        //this.serverscore = JSON.parse(e.data).value
+        //console.log(this.serverscore)
+                // if(typeof e.data ==="string") {
         //   let json = JSON.parse(e.data);
         // }
       }

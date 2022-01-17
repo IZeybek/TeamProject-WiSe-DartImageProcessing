@@ -79,10 +79,10 @@ export default Vue.extend({
     playDart,
   },
   created(){
-    this.createWebSocket()
-    setTimeout(() => { this.websocket.send(JSON.stringify({
-        "request": "10"
-        })) }, 2000);
+    //this.createWebSocket()
+    // setTimeout(() => { this.websocket.send(JSON.stringify({
+    //     "request": "10"
+    //     })) }, 2000);
   },
   data: () => ({
     player_count: 2,
