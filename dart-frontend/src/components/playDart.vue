@@ -65,6 +65,7 @@ export default {
       isHidden: false,
       players: [],
       correct: "",
+      round:-1,
       playerCount: 0,
       websocket:null,
       pointsweb:[],
@@ -93,7 +94,7 @@ export default {
     this.players.push(temp_player)
     this.createWebSocket()
     setTimeout(() => { this.websocket.send(JSON.stringify({
-        "request": 11
+        "request": 404
         })) }, 2000);
   },
   methods: {
@@ -108,6 +109,9 @@ export default {
         let temp_player = this.currentPlayer
         this.$root.$refs.PlayerList.popout(temp_player);
       }
+      this.websocket.send(JSON.stringify({
+        "request": 13
+        }))
       //this.playerCount = (this.playerCount + 4) % this.players.length;
       //this.currentPlayer = this.players[0];
       //let temp_player = this.currentPlayer
@@ -155,6 +159,12 @@ export default {
         alert("try again")
       }
     },
+    sendServerNextPlayerStatus() {
+      this.websocket.send(JSON.stringify({
+        "request": 13
+        }))
+    },
+
     createWebSocket() {
       this.websocket = new WebSocket("ws://127.0.0.1:9000")
       this.websocket.onopen =()=>{
@@ -169,11 +179,25 @@ export default {
       }
       this.websocket.onmessage = (e) => {
         let content = JSON.parse(e.data)
-        let number = content.value
-        console.log(number)
-        
-        this.serverscore = number
-        this.dartScores[0].score = number
+        console.log(content)
+        let number = content.request
+        if(number == 1) { // 404
+          this.round = this.round +1
+          this.dartScores[this.round].score = content.value
+            console.log("1." + content.value)
+        } else if(number == 2){
+          console.log("2."+ content)
+
+        } else {
+          console.log("3." + content)
+        }
+        // console.log(number)
+        // this.round = this.round +1
+        // this.serverscore = number
+
+
+        // this.serverscore = number
+        // this.dartScores[0].score = number
         //this.$data.serverscore = number;
         //this.serverscore = JSON.parse(e.data).value
         //console.log(this.serverscore)
