@@ -1,5 +1,6 @@
 # import the necessary packages
 from skimage.metrics import structural_similarity as compare_ssim
+from skimage.metrics import mean_squared_error
 import imutils
 import cv2
 import numpy as np
@@ -9,9 +10,9 @@ def calc_image_difference(image_a, image_b):
 
     Parameters
     ----------
-    img_a: array
+    image_a: array
         image of a dartboard with a dart stuck in it
-    img_b: array
+    image_b: array
         image of an empty dart board
 
     Returns
@@ -25,7 +26,7 @@ def calc_image_difference(image_a, image_b):
     array
         diff: The full SSIM image multiplied by 255 to create the difference img.
     float
-        ssim_score: a score which tells you how identical the images are (1 = identical)
+        mse: A score which tells you how identical the images are. (Mean Squared Error)
     """
     # convert the images to grayscale
     grayA = cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY)
@@ -33,6 +34,7 @@ def calc_image_difference(image_a, image_b):
 
     # calc the difference between the two greyscale images to detect the thrown dart
     ssim_score, diff = calc_ssim(grayA, grayB)
+    mse = mean_squared_error(grayA, grayB)
 
     # threshold the difference image to get a clear dart
     thresh = cv2.threshold(diff, 0, 255,
@@ -44,7 +46,7 @@ def calc_image_difference(image_a, image_b):
     kernel = np.ones((10, 10), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_ERODE, kernel)
 
-    return grayA, grayB, thresh, diff, ssim_score
+    return grayA, grayB, thresh, diff, mse
 
 def calc_ssim(img_a, img_b):
     """Calculate the difference between 2 images.
@@ -235,21 +237,19 @@ def process_images(image_a, image_b):
     Returns
     -------
     float
-        score_ssim: a score which tells you how identical the images are (1 = identical)
+        mse: a score which tells you how identical the images are, (Mean Squared Error)
     tuple
         result: a point which tells you where the tip of the dart is located.
     tuple
         dart_contour_points: a tuple which contains 2 points. These points define the bounding box around the dart.
     """
-    gray_a, gray_b, thresh, diff, score_ssim = calc_image_difference(image_a, image_b)
-    if (score_ssim == 1):
-        return score_ssim, None, None
+    gray_a, gray_b, thresh, diff, mse = calc_image_difference(image_a, image_b)
     cv2.imshow("tresh", thresh)
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
     result = choose_dart_tip(thresh, dart_contour_points, points[0], points[1])
-    return score_ssim, result, dart_contour_points
+    return mse, result, dart_contour_points
 
 def getResult(imageA, imageB):
     print("Test functions:")

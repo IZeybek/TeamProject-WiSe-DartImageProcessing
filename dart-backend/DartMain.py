@@ -28,6 +28,7 @@ def dart_main_loop():
     calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl', 'calibrationData_R.pkl')
     websocket.CALIBRATION_DONE.set()
     #snapshot_cam_L = calData_L.calImage.copy()
+
     # main Loop
     while True:
         # calibrate only if websocket thread Event is not set
@@ -47,13 +48,17 @@ def dart_main_loop():
         _, camRGB = videoStream_L.read()
         snapshot_cam = camRGB.copy()
         rectangle = snapshot_cam.copy()
-        score_ssim, result, dart_contour_points = process_images(reference_image, snapshot_cam)
-        cv2.imshow("reference_image.jpg", reference_image)
-        cv2.rectangle(rectangle, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-        cv2.circle(rectangle, (result[0], result[1]), 3, (0, 255, 0), 2)
-        cv2.imshow("second", rectangle)
+        mse, result, dart_contour_points = process_images(reference_image, snapshot_cam)
+
         # get dart tip value if image difference is high enough
-        if score_ssim > 0.95:
+        if mse > 40:
+
+            # draw images
+            cv2.imshow("reference_image.jpg", reference_image)
+            cv2.rectangle(rectangle, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+            cv2.circle(rectangle, (result[0], result[1]), 3, (0, 255, 0), 2)
+            cv2.imshow("second", rectangle)
+
             # calc result value
             new_dart_coord = showLatestDartLocationOnBoard(draw_L, result, calData_L)
             game_point_result = detect_segment(new_dart_coord, calData_L)
@@ -85,9 +90,8 @@ def waitForKey():
         cv2.destroyAllWindows()
 
 def test_dart_detection():
-    imageA = cv2.imread("loop_test\cam_L_empty.jpg")
-    imageB = cv2.imread("loop_test\cam_L_dart1.jpg")
-    print("Test Wrapper function:")
+    imageA = cv2.imread("loop_test/cam_L_empty.jpg")
+    imageB = cv2.imread("loop_test/cam_L_dart1.jpg")
 
     # wrapper function
     score_ssim, result, dart_contour_points = process_images(imageA, imageB)
@@ -139,14 +143,15 @@ def test_dart_main_loop():
 
         # calculate dart tip
         test_image = images[test_image_idx]
-        score_ssim, result, dart_contour_points = process_images(reference_image, test_image)
-        print("SSIM: " + str(score_ssim))
-        
-        rect = test_image.copy()
-        drawRectangle(rect, result, dart_contour_points)
+        mse, result, dart_contour_points = process_images(reference_image, test_image)
+        print("MSE: " + str(mse))
 
         # get dart tip value if image difference is high enough
-        if score_ssim < 0.99:
+        if mse > 40:
+            # draw bounding box + point
+            rect = test_image.copy()
+            drawRectangle(rect, result, dart_contour_points)
+
             # calc result value
             new_dart_coord = showLatestDartLocationOnBoard(draw_L, result, calData_L)
             game_point_result = detect_segment(new_dart_coord, calData_L)
@@ -177,7 +182,7 @@ def test_dart_main_loop():
         time.sleep(4)
 
 if __name__ == "__main__":
-    mode = "Test_Dart_Main_Loop"
+    mode = "Test_Dart_Detection"
     if mode == "Main_Loop":
         dart_main_loop()
     elif mode == "Test_Dart_Detection":
