@@ -110,7 +110,7 @@ def drawRectangle(test_image, result, dart_contour_points):
     cv2.imshow("rect", rect)
 
 def test_dart_main_loop():
-    time.sleep(5)
+    time.sleep(10) #5
     # load test images
     empty_dart_board = cv2.imread("loop_test/cam_R_empty.jpg")
     reference_image = empty_dart_board.copy()
