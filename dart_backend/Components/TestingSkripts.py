@@ -1,5 +1,5 @@
-from dart_backend.Components.DartDetection.DartDetection import *
-from dart_backend.Components.Calibration.CalibrationMain import *
+from .DartDetection.DartDetection import *
+from .Calibration.CalibrationMain import *
 
 
 def test_dart_detection():

@@ -70,7 +70,6 @@ class VideoStream:
         return self.grabbed, self.frame
 
     def read(self):
-        time.sleep(4)
         """return the frame most recently read.
  
         Returns

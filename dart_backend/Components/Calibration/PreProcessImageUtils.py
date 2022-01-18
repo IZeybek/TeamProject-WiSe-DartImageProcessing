@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
-from dart_backend.Components.Calibration.Contrast import applyContrast
-from dart_backend.Components.Calibration.EllipseUtils import smoothEllipse
+from .Contrast import applyContrast
+from .EllipseUtils import smoothEllipse
 
 def locateRedSpots(img):
     
@@ -44,16 +44,12 @@ def locateRedSpots(img):
    
     cv2.imshow("result-mask-tresh", thresh2)
     
-    # kernel = np.ones((3, 3), np.uint8) 
-    # thresh2 = cv2.morphologyEx(thresh2, cv2.MORPH_ERODE, kernel)
-    # cv2.imshow("result-ERODE", thresh2)
-    # kernel = np.ones((3, 3), np.uint8) 
-    # thresh2 = cv2.morphologyEx(thresh2, cv2.MORPH_CLOSE, kernel) 
-    # cv2.imshow("result-OPEN", thresh2)
-    test =2
     
 def getCanny(tresh):
-    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_OPEN , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    edged_tresh = cv2.morphologyEx(edged_tresh, cv2.MORPH_OPEN , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    edged_tresh = cv2.GaussianBlur(edged_tresh, (5, 5), -1)
+    cv2.imshow("blurrEdge", edged_tresh)
     edged = cv2.Canny(edged_tresh, 250, 255)  # imCal
 
     cv2.imshow("canny", edged)

@@ -1,36 +1,31 @@
-from dart_backend.Components.Calibration.CalibrationMain import *
-from dart_backend.Components.DartDetection.DartLocation import *
-from dart_backend.Components.DartDetection.DartDetection import *
-from dart_backend.Components.Calibration.VideoCapture import *
+from .Calibration.CalibrationMain import *
+from .DartDetection.DartLocation import *
+from .DartDetection.DartDetection import *
+from .Calibration.VideoCapture import *
 import time
 
 
 def one_camera_loop(websocket):
-    videoStream_L, snapshot_cam_L = getVideoStream(src=0)
-    videoStream_R, snapshot_cam_R = getVideoStream(src=1)
+    videoStream_L, snapshot_cam_L = getVideoStream(src=1)
+    videoStream_R, snapshot_cam_R = getVideoStream(src=0)
 
     reference_image = snapshot_cam_R.copy()
-    # cal_data_L, transformed_image_L, cal_data_R, transformed_image_R  = calibrateAll(snapshot_cam_L, snapshot_cam_R)
+    calData_L, draw_L, calData_R, draw_R  = calibrateAll(snapshot_cam_L, snapshot_cam_R)
 
-    # # load reference image
-
-    # # calibration data
-    # calData_L = None
-    # draw_L = None
-    # calData_R = None
-    # draw_R = None
 
     # TODO: add new Calibration instead of loading
-    calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl', 'calibrationData_R.pkl')
+    # calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
     websocket.CALIBRATION_DONE.set()
+    cv2.destroyAllWindows()
     # snapshot_cam_L = calData_L.calImage.copy()
-
+    
+    # cv2.namedWindow('result', cv2.WINDOW_NORMAL)
     # main Loop
     while True:
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             # TODO: add new Calibration instead of loading
-            calData_L, draw_L, calData_R, draw_R = readCalibrationData('calibrationData_L.pkl', 'calibrationData_R.pkl')
+            calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
             websocket.CALIBRATION_DONE.set()
 
         # reset reference image
@@ -49,13 +44,14 @@ def one_camera_loop(websocket):
         # get dart tip value if image difference is high enough
         if mse > 40:
             # draw images
-            cv2.imshow("reference_image.jpg", reference_image)
-            cv2.rectangle(rectangle, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
-            cv2.circle(rectangle, (result[0], result[1]), 3, (0, 255, 0), 2)
-            cv2.imshow("second", rectangle)
+            # cv2.imshow("reference_image.jpg", reference_image)
+            # cv2.rectangle(rectangle, dart_contour_points[0], dart_contour_points[1], (0, 0, 255), 2)
+            # cv2.circle(rectangle, (result[0], result[1]), 3, (0, 255, 0), 2)
+            # cv2.imshow("second", rectangle)
 
             # calc result value
-            new_dart_coord = showLatestDartLocationOnBoard(draw_L, result, calData_L)
+            new_dart_coord, transformed_image = showLatestDartLocationOnBoard(draw_L, result, calData_L)
+            cv2.imshow("result", transformed_image)
             game_point_result = detect_segment(new_dart_coord, calData_L)
             print("Detected dart. The score is " + str(game_point_result) + " Points!")
 
@@ -65,8 +61,8 @@ def one_camera_loop(websocket):
             # increase count, replace reference image
             websocket.increase_image_count()
             reference_image = snapshot_cam
-
-        waitForKey()
+        
+        cv2.waitKey(1)
 
         # check if round is done and wait if true and reset reference images afterwards
         websocket.Global_LOCK.acquire()
@@ -137,7 +133,8 @@ def test_one_camera_loop(websocket):
             drawRectangle(rect, result, dart_contour_points)
 
             # calc result value
-            new_dart_coord = showLatestDartLocationOnBoard(draw_L, result, calData_L)
+            new_dart_coord, transformed_image = showLatestDartLocationOnBoard(draw_L, result, calData_L)
+            cv2.imshow("point detected", transformed_image)
             game_point_result = detect_segment(new_dart_coord, calData_L)
             print("Detected dart. The score is " + str(game_point_result) + " Points!")
 

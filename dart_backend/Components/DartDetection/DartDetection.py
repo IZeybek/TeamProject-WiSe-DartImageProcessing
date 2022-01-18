@@ -3,6 +3,7 @@ from skimage.metrics import structural_similarity as compare_ssim
 from skimage.metrics import mean_squared_error
 import imutils
 import cv2
+import math
 import numpy as np
 
 def calc_image_difference(image_a, image_b):
@@ -41,11 +42,11 @@ def calc_image_difference(image_a, image_b):
                            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
     # now get rid of black pixels in the dart
-    kernel = np.ones((10, 10), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_DILATE, kernel)
-    kernel = np.ones((10, 10), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_ERODE, kernel)
-
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+    # thresh = cv2.GaussianBlur(thresh, (5, 5), -1)
+    if ssim_score == 1:
+        return grayA, grayB, thresh, diff, -1
     return grayA, grayB, thresh, diff, mse
 
 def calc_ssim(img_a, img_b):
@@ -244,11 +245,17 @@ def process_images(image_a, image_b):
         dart_contour_points: a tuple which contains 2 points. These points define the bounding box around the dart.
     """
     gray_a, gray_b, thresh, diff, mse = calc_image_difference(image_a, image_b)
+    if mse == -1:
+        return  mse, None, None
     cv2.imshow("tresh", thresh)
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
     result = choose_dart_tip(thresh, dart_contour_points, points[0], points[1])
+    area = (dart_contour_points[0][0] - dart_contour_points[1][0]) * (dart_contour_points[0][1] - dart_contour_points[1][1])
+    print("area", area)
+    # if 60000 < area:
+    #     return 1, result, dart_contour_points
     return mse, result, dart_contour_points
 
 def getTestResult(imageA, imageB):
@@ -293,8 +300,28 @@ def getTestResult(imageA, imageB):
     return result
 
 def choose_better_dart(dart1, dart2, contour1, contour2):
-    if (contour1[0][0] - contour1[1][0]) * (contour1[0][1] - contour1[1][1])\
-            > (contour2[0][0] - contour2[1][0]) * (contour2[0][1] - contour2[1][1]):
-        return dart1
+    firstArea = (contour1[0][0] - contour1[1][0]) * (contour1[0][1] - contour1[1][1])
+    secondArea = (contour2[0][0] - contour2[1][0]) * (contour2[0][1] - contour2[1][1])
+    diffArea = abs(firstArea - secondArea)
+    print('firstArea', firstArea, 'secondArea', secondArea)
+    print('diffArea', diffArea)
+    if diffArea < 15000:
+        newDart = ((dart1[0] + dart2[0])/ 2, (dart1[1] + dart2[1])/ 2)
+        distance = ((dart1[0] - dart2[0])/ 2, (dart1[1] - dart2[1])/ 2)
+        
+        newDart_distance = math.sqrt((distance[0]**2 +  distance[1]**2))*2
+        print('newDart_distance', newDart_distance)
+        if newDart_distance < 25: 
+            return (newDart[0], newDart[1]) #(x,y)
+        else:
+            if firstArea > secondArea:
+                
+                return dart1
+            else:
+                return dart2
     else:
-        return dart2
+        if firstArea < secondArea:
+            return dart1
+        else:
+            return dart2
+    

@@ -1,7 +1,8 @@
 import cv2 
 import numpy as np
 import math
-from dart_backend.Components.Calibration.Utils import *
+import sys
+from .Utils import *
 
 def getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img):
     x = Ellipse.x
@@ -77,28 +78,76 @@ def calculateDstPoint(i, calData):
 
     return dstpoint
 
-def getFinalTransformationMatrix(original_img, calData):
+def nothing(x):
+    pass
 
+def createTrackbars():
+    cv2.namedWindow('transformation', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('p1_x', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p1_y', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p2_x', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p2_y', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p3_x', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p3_y', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p4_x', 'transformation', 0, 20, nothing)
+    cv2.createTrackbar('p4_y', 'transformation', 0, 20, nothing)
+    cv2.setTrackbarPos('p1_x', 'transformation', 10)
+    cv2.setTrackbarPos('p1_y', 'transformation', 10)
+    cv2.setTrackbarPos('p2_x', 'transformation', 10)
+    cv2.setTrackbarPos('p2_y', 'transformation', 10)
+    cv2.setTrackbarPos('p3_x', 'transformation', 10)
+    cv2.setTrackbarPos('p3_y', 'transformation', 10)
+    cv2.setTrackbarPos('p4_x', 'transformation', 10)
+    cv2.setTrackbarPos('p4_y', 'transformation', 10)
+    
+    cv2.createTrackbar('1 -> Done', 'transformation', 0, 1, nothing)
+
+def getFinalTransformationMatrix(image, calData):
+    image = image.copy()
     intersectPoints = calData.intersectPoints
+    createTrackbars()
     
-    dst_points = []
-    for dstPoint in calData.destinationPoints:
-        dst_points.append(calculateDstPoint(dstPoint, calData))
-    
-    # finalize transformation matrix
-    src_points = []
-    for point in intersectPoints:
-        src_points.append((point[0], point[1]))
-    
-    transformation_matrix = cv2.getPerspectiveTransform(np.array(src_points, np.float32), np.array(dst_points, np.float32))
+    while (1):
+        # get current positions of four trackbars
+        
+        s = cv2.getTrackbarPos('1 -> Done', 'transformation')
+        if s == 1:
+            cv2.destroyAllWindows()
+            break
 
-    normilzed_board_image = cv2.warpPerspective(original_img, transformation_matrix, (800, 800))
+        p1_x = cv2.getTrackbarPos('p1_x', 'transformation') - 10
+        p1_y = cv2.getTrackbarPos('p1_y', 'transformation') - 10
+        p2_x = cv2.getTrackbarPos('p2_x', 'transformation') - 10
+        p2_y = cv2.getTrackbarPos('p2_y', 'transformation') - 10
+        p3_x = cv2.getTrackbarPos('p3_x', 'transformation') - 10
+        p3_y = cv2.getTrackbarPos('p3_y', 'transformation') - 10
+        p4_x = cv2.getTrackbarPos('p4_x', 'transformation') - 10
+        p4_y = cv2.getTrackbarPos('p4_y', 'transformation') - 10
+        trackings = [(p1_x,p1_y),(p2_x,p2_y),(p3_x,p3_y),(p4_x,p4_y)]
+        
+        dst_points = []
+        for dstPoint in calData.destinationPoints:
+            dst_points.append(calculateDstPoint(dstPoint, calData))
+        
+        # finalize transformation matrix
+        src_points = []
+        for index, point in enumerate(intersectPoints):
+            src_points.append((point[0] + trackings[index][0], point[1]+ trackings[index][1]))
+        
+        transformation_matrix = cv2.getPerspectiveTransform(np.array(src_points, np.float32), np.array(dst_points, np.float32))
 
-    normilzed_board_image = getNormilizedBoard(normilzed_board_image, calData)
+        normilzed_board_image = cv2.warpPerspective(image, transformation_matrix, (800, 800))
 
-    for dstPoint in dst_points:
-        cv2.circle(normilzed_board_image, (int(dstPoint[0]), int(dstPoint[1])), 2, (255, 255, 0), 2, 4)
+        normilzed_board_image = getNormilizedBoard(normilzed_board_image, calData)
 
+        for dstPoint in dst_points:
+            cv2.circle(normilzed_board_image, (int(dstPoint[0]), int(dstPoint[1])), 2, (255, 255, 0), 2, 4)
+        
+        for index, point in enumerate(dst_points):
+                cv2.putText(normilzed_board_image, str(index+1), (int(point[0]), int(point[1])), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 255), 4, cv2.LINE_AA)
+        cv2.imshow('adjusted_image', normilzed_board_image)
+        cv2.waitKey(1)
+       
     return transformation_matrix, normilzed_board_image
 
 def getSectorAngle(i, calData):
@@ -120,7 +169,7 @@ def getNormilizedBoard(img, calData):
         return img
 
     
-def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_processed_ellipse, calData):
+def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_processed_ellipse):
 
     # find enclosing ellipse TODO: use HoughEllipse or at least try using it :>    
     Ellipse, image_proc_img = findEllipse(pre_processed_ellipse, image_proc_img)
@@ -128,13 +177,11 @@ def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_pr
     
     waitForKey()
 
-    calData.angleZone_horizontal = (Ellipse.angle + calData.angleZone_horizontal[0] , Ellipse.angle + calData.angleZone_horizontal[1])
-    calData.angleZone_vertical  = (Ellipse.angle + calData.angleZone_vertical[0], Ellipse.angle + calData.angleZone_vertical[1])
-    lines_seg, image_proc_img = findSectorLines(pre_processed_lines, image_proc_img, calData)
+    lines_seg, image_proc_img = findSectorLines(pre_processed_lines, image_proc_img, Ellipse)
     
     cv2.imshow("5-detectedLines", image_proc_img)
     waitForKey()
-    # TODO: optimize angleZones
+    
     intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
     return intersectPoints
@@ -144,26 +191,25 @@ def smoothEllipse(tresh):
     # close -> dilate then erode
     # smooth out board to get an even ellipse
     pre_processing_ellipse = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
-    pre_processing_ellipse = cv2.morphologyEx(pre_processing_ellipse, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+    pre_processing_ellipse = cv2.morphologyEx(pre_processing_ellipse, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17)))
     return pre_processing_ellipse
 
-def findSectorLines(edged, image_proc_img, calData):
+def findSectorLines(edged, image_proc_img, Ellipse):
     
-    # fit line to find intersec point for dartboard center point
-    #LEFT
-    # lines = cv2.HoughLines(edged, 1, np.pi / 135, 100)
-    #Right
-    lines = cv2.HoughLines(edged, 1, np.pi / 135, 100,100)
+    x_line = cv2.HoughLines(edged, 1, np.pi / 160, 90,100)
     
-    center = (400,300)
-    horizontal_offset = 100
-    vertical_offset = 100
-    intersectLines = []
     horizontal_lines = []
     vertical_lines = []
     intersectLines_XY_coord = []
-    ## sector angles important -> make accessible
-    for line in lines:
+    
+    fixed_horizontal_slope= 0
+    fixed_vertical_slope= sys.maxsize
+    
+    filtered_Lines = []
+    horizontal_temp = 60
+    vertical_temp = 60
+
+    for line in x_line:
         # rho, theta = line[0]
         rho, theta = line[0]
         a = np.cos(theta)
@@ -174,14 +220,47 @@ def findSectorLines(edged, image_proc_img, calData):
         y1 = int(y0 + 2000 * (a))
         x2 = int(x0 - 2000 * (-b))
         y2 = int(y0 - 2000 * (a))
-        if theta > np.pi / 180 * calData.angleZone_horizontal[0] and theta < np.pi / 180 * calData.angleZone_horizontal[1]:
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 0, 255),2)              
-            intersectLines.append(line[0])
-            horizontal_lines.append([(x1,y1),(x2,y2)])
-        elif theta > np.pi / 180 * calData.angleZone_vertical[0] and theta < np.pi / 180 * calData.angleZone_vertical[1]:
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (0, 255, 0),2)     
-            intersectLines.append(line[0])
-            vertical_lines.append([(x1,y1),(x2,y2)])
+        slope = (y1 - y0) / (x1 - x0)
+        c= y0-slope
+        
+        distance = (slope * Ellipse.x - Ellipse.y +c) / (math.sqrt(slope**2 + 1))
+        if distance < 300:
+            angle_for_vertical_line =  abs(math.degrees(math.atan((slope-fixed_horizontal_slope)/(1+ (slope * fixed_horizontal_slope)))))
+            angle_for_horizontal_line = abs(math.degrees(math.atan((slope-fixed_vertical_slope)/(1+ (slope * fixed_vertical_slope)))))
+            
+            
+            cv2.line(image_proc_img, (x1,y1),(x2, y2), (255, 0, 255),1) 
+            if angle_for_vertical_line > angle_for_horizontal_line and angle_for_vertical_line > horizontal_temp:
+
+                horizontal_temp = angle_for_vertical_line
+                vertical_lines.append([(x1,y1),(x2,y2)])
+                filtered_Lines.append([(x1,y1),(x2,y2)])
+            elif angle_for_vertical_line < angle_for_horizontal_line and angle_for_horizontal_line > vertical_temp:
+                vertical_temp = angle_for_horizontal_line
+                horizontal_lines.append([(x1,y1),(x2,y2)])
+                filtered_Lines.append([(x1,y1),(x2,y2)])
+            
+    degree_btw_both_lines = 60
+    h = 0
+    v = 0
+    for x_line in horizontal_lines:
+        (x0,y0), (x1,y1) = x_line
+        slope_x = (y1 - y0) / (x1 - x0)
+        for y_line in vertical_lines:
+            (x2,y2), (x3,y3) = y_line
+            
+            slope_y = (y3 - y2) / (x3 - x2)
+            try:
+                angle_between =  abs(math.degrees(math.atan((slope_x-slope_y)/(1+ (slope_x * slope_y)))))
+                if  angle_between > degree_btw_both_lines:
+                    degree_btw_both_lines = angle_between
+                    h = [(x0,y0),(x1,y1)]
+                    v = [(x2,y2),(x3,y3)]
+            except:
+                continue
+        
+    cv2.line(image_proc_img, h[0],h[1], (0, 0, 255),2)  
+    cv2.line(image_proc_img, v[0],v[1], (0, 255, 0),2)  
     
     # if len(intersectLines) == 2:
     #     x, y = intersection(intersectLines[0], intersectLines[1])
@@ -189,8 +268,8 @@ def findSectorLines(edged, image_proc_img, calData):
     #     x, y = segmented_intersections(intersectLines)    
 
     # cv2.circle(image_proc_img,  (int(x), int(y)), 5, (255, 0, 255), -1)
-    intersectLines_XY_coord.append(horizontal_lines[0])
-    intersectLines_XY_coord.append(vertical_lines[0])
+    intersectLines_XY_coord.append(h)
+    intersectLines_XY_coord.append(v)
     
     return intersectLines_XY_coord, image_proc_img
 

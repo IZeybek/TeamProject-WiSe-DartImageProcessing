@@ -15,8 +15,8 @@ def showLatestDartLocationOnBoard(transformed_image, locatedDart_coord, cal_data
     dart_loc = cv2.perspectiveTransform(dart_loc_temp, cal_data.transformation_matrix)
     new_dart_loc = tuple(dart_loc.reshape(1, -1)[0])
     cv2.circle(transformed_image, (int(new_dart_loc[0]), int(new_dart_loc[1])), radius=7, color=(0, 255, 255), thickness=-1)
-    cv2.imshow("point detected", transformed_image)
-    return new_dart_loc
+    
+    return new_dart_loc, transformed_image
 
 def detect_segment(new_dart_coord, calData):
     x = new_dart_coord[0]
@@ -62,9 +62,9 @@ def detect_segment(new_dart_coord, calData):
             elif result_ring == 1:
                 result_point_amount = 25
             elif result_ring == 3:
-                result_point_amount = map_board_game_points[index] * 2
-            elif result_ring == 5:
                 result_point_amount = map_board_game_points[index] * 3
+            elif result_ring == 5:
+                result_point_amount = map_board_game_points[index] * 2
             elif result_ring == -1:
                 result_point_amount = -1
             else:
