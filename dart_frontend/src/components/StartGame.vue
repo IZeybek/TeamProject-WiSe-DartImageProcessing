@@ -16,7 +16,7 @@
                   ></v-text-field>
                 </v-card-actions>
                 <v-card-actions
-                  v-for="(item, index) in getCount()"
+                  v-for="(item, index) in reversedMessage"
                   :key="index"
                   class="justify-center"
                   max-width="250"
@@ -58,6 +58,7 @@
                 v-if="game == 1"
                 v-bind:playernames="players"
                 :initialScore="score"
+                :websocket ="websocket"
                 v-on:gameover="reset"
               />
       </v-col>
@@ -77,31 +78,47 @@ export default Vue.extend({
   components: {
     playDart,
   },
+  created(){
+    //this.createWebSocket()
+    // setTimeout(() => { this.websocket.send(JSON.stringify({
+    //     "request": "10"
+    //     })) }, 2000);
+  },
   data: () => ({
     player_count: 2,
     game: 0,
     players: [],
     gamestarted: false,
     score: 301,
+    websocket:null,
   }),
+    computed: {
+    reversedMessage: function () {
+      return this.getCount(this.player_count)
+    }
+  },
   methods: {
     reset() {
       this.game = 0;
       this.players = 0;
       this.gamestarted = false;
     },
-    getCount() {
+    getCount(playercount) {
       const players = [];
-      for (let i = 0; i < this.player_count; i++) {
+      for (let i = 0; i < playercount; i++) {
         players.push({ name: "player" + (i + 1) });
       }
-
       this.players = players;
       return players;
     },
     startGame() {
         this.game = 1;
     },
+    log(name){
+      console.log(name)
+    },
+    
+
   },
 });
 </script>

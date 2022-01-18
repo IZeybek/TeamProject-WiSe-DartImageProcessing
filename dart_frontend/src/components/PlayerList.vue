@@ -52,7 +52,8 @@ export default {
   },
   created() {
     this.$root.$refs.PlayerList = this;
-    this.init();
+    this.$root.$refs.playDart.init();
+    //this.init();
     // this.createWebsocket()
   },
   methods: {

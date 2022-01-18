@@ -32,9 +32,9 @@
           <div class="v-sheet theme--light rounded-lg"
             style="min-height: 268px">
           <dart-scorer :dartScores="dartScores"></dart-scorer>
-          <div class="head justify-center">
-            <v-btn v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
-            <v-btn v-show="win" @click="init()" small dark>newGame?</v-btn>
+          <div class="justify-center" style ="text-align:center">
+            <v-btn style ="" v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
+            <v-btn v-show="win" @click="init()" small dark>New Game?</v-btn>
           </div>
           </div>
         </div>
@@ -65,8 +65,10 @@ export default {
       isHidden: false,
       players: [],
       correct: "",
+      round:-1,
       playerCount: 0,
-      connection: null,
+      websocket:null,
+      pointsweb:[],
       currentPlayer: {
         name: "player.name",
         score: 301,
@@ -75,22 +77,25 @@ export default {
       dartScores: [],
     };
   },
-  filters: {
-    totext(serverscore) {
-      if (serverscore == 0) {
-        return "";
-      }
-      if (serverscore == 0) {
-        return serverscore;
-      }
-    },
-  },
+   filters: {
+     totext(serverscore) {
+       if (serverscore == 0) {
+         return "";
+       }
+       if (serverscore == 0) {
+         return serverscore;
+       }
+     },
+   },
   created() {
     this.init();
     this.currentPlayer = this.players[0]
     let temp_player=this.players.shift()
     this.players.push(temp_player)
-    // this.createWebsocket()
+    this.createWebSocket()
+    setTimeout(() => { this.websocket.send(JSON.stringify({
+        "request": 404
+        })) }, 2000);
   },
   methods: {
     changePlayer() {
@@ -104,6 +109,12 @@ export default {
         let temp_player = this.currentPlayer
         this.$root.$refs.PlayerList.popout(temp_player);
       }
+      for(let i = 0; i < 3; i++) {
+        this.dartScores[i].score = 0
+      }
+      this.websocket.send(JSON.stringify({
+        "request": 13
+        }))
       //this.playerCount = (this.playerCount + 4) % this.players.length;
       //this.currentPlayer = this.players[0];
       //let temp_player = this.currentPlayer
@@ -113,7 +124,7 @@ export default {
     init() {
       const darts = [];
       for (let i = 0; i < 3; i++) {
-        darts.push({score:5,}); // some changes for testing
+        darts.push({score:0,}); // some changes for testing
         // if (i == 0) {
         //   darts.push({
         //     score: 5,
@@ -151,13 +162,55 @@ export default {
         alert("try again")
       }
     },
-    createWebsocket() {
-      this.connection = new WebSocket("ws://127.0.0.1:6969");
-      console.log(this.connection);
-      this.connection.send("hello");
+    sendServerNextPlayerStatus() {
+      this.websocket.send(JSON.stringify({
+        "request": 13
+        }))
+    },
+
+    createWebSocket() {
+      this.websocket = new WebSocket("ws://127.0.0.1:9000")
+      this.websocket.onopen =()=>{
+        console.log("Connected to Backend")
+      }
+      this.websocket.onclose = function() {
+        console.log("connection with websocket closed")
+      }
+      this.websocket.onerror =function(error) {
+        console.log(error)
+        console.log("WebSocket is closed now."+error);
+      }
+      this.websocket.onmessage = (e) => {
+        let content = JSON.parse(e.data)
+        console.log(content)
+        let number = content.request
+        if(number == 1) { // 404
+          this.round = this.round +1
+          this.dartScores[this.round].score = content.value
+            console.log("1." + content.value)
+        } else if(number == 2){
+          console.log("2."+ content)
+
+        } else {
+          console.log("3." + content)
+        }
+        // console.log(number)
+        // this.round = this.round +1
+        // this.serverscore = number
+
+
+        // this.serverscore = number
+        // this.dartScores[0].score = number
+        //this.$data.serverscore = number;
+        //this.serverscore = JSON.parse(e.data).value
+        //console.log(this.serverscore)
+                // if(typeof e.data ==="string") {
+        //   let json = JSON.parse(e.data);
+        // }
+      }
     },
     callibration(){
-      console.log("Test")
+      console.log(this.serverscore)
     }
   },
 };

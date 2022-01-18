@@ -3,7 +3,8 @@
     <div
       v-for="(item, index) in dartScores"
       v-bind:key="index"
-      :style="{ padding: '5px', 'background-color': getTurn(index) }" @mouseover="showPencil = true"  @mouseleave="showPencil = false"
+      :style="{ padding: '5px', 'background-color': getTurn(index) }" 
+      @mouseover="item.showPencil = true"  @mouseleave="item.showPencil = false"
     >
       <v-row cols="1" sm="8" class="ma-2">
         <div class="justify-center">
@@ -24,14 +25,20 @@
           <v-icon>mdi-equal</v-icon> {{ item.score }} <!-- change later-->
         </div>
         <!--div @mouseover="showPencil = true"  @mouseleave="showPencil = false"-->
-        <img v-show="showPencil" @click="showInput=true" @dblclick="showInput=false"
+        <img v-show="item.showPencil" @click="item.showInput=true" @dblclick="item.showInput=false"
+            src="../assets/close.png"
+            width="30"
+            height="30"
+            style="padding: 2px;margin-left:38px;"
+          />
+          <img v-show="item.showPencil" @click="item.showInput=true" @dblclick="item.showInput=false"
             src="../assets/pencil.png"
             width="30"
             height="30"
             style="padding: 2px;margin-left:38px;"
           />
       </v-row>
-      <v-text-field v-show="showInput"
+      <v-text-field v-show="item.showInput"
                     type="number"
                     class="mt-n6"
                     v-model.number="corrected"
@@ -57,6 +64,11 @@ export default {
   },
   created() {
     this.$root.$refs.DartScorer = this;
+    this.dartScores.forEach((item) =>{
+      this.$set(item,"showPencil",false)
+      this.$set(item,"showInput",false)
+    })
+    console.log(this.dartScores)
   },
   methods: {
     getTurn(index) {
@@ -67,7 +79,7 @@ export default {
       }
     },
     onEnter: function(index) {
-      this.showInput=false;
+      this.dartScores[index].showInput=false;
       this.dartScores[index].score=this.corrected
     },
     isNumeric(value) {
@@ -83,6 +95,9 @@ export default {
       for(let i= 0;i<this.dartScores.length;i++) {
         finaladditonScore=finaladditonScore+this.dartScores[i].score
       }
+      // for(let i= 0;i<this.dartScores.length;i++) {
+      //   this.dartScores[i].score = 0
+      // }    for later implementation
       return finaladditonScore
     },
   },

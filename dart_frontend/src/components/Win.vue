@@ -2,10 +2,10 @@
   <div class="v-sheet theme--light rounded-lg" style="min-height: 268px">
     <div class="score">
       <v-list-item-title>
-        <h2>{{ currentPlayer.name }}'s</h2></v-list-item-title
+        <h2>{{ currentPlayer.name }}</h2></v-list-item-title
       >
       <v-list-item-subtitle>
-        <h3>wins</h3>
+        <h3>{{currentPlayer.score}}</h3>
       </v-list-item-subtitle>
       <div
         class="scorePoint"
@@ -15,7 +15,7 @@
           maxFontSize: '400px',
         }"
       >
-        {{ currentPlayer.score }}
+        win
       </div>
     </div>
   </div>
