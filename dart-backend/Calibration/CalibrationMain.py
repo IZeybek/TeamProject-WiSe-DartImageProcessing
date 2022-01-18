@@ -12,7 +12,7 @@ def getCalibration(calData, snapshot, original):
     cv2.imshow("3-pre_processing_ellipse", pre_processed_ellipse)
 
     waitForKey()
-    calData.intersectPoints = getIntersectionPointsFromEllipse(snapshot, pre_processed_lines, pre_processed_ellipse, calData)
+    calData.intersectPoints = getIntersectionPointsFromEllipse(snapshot, pre_processed_lines, pre_processed_ellipse)
 
     waitForKey()
     calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
@@ -37,9 +37,7 @@ def calibrateAll(snapshot_cam_L, snapshot_cam_R, filename_L='Calibration_standar
 
 def calibrateRight(snapshot_cam_R, original_R):
     calData_R = CalibrationData()
-    calData_R.angleZone_horizontal = ( -40 , -35)
-    calData_R.angleZone_vertical  = (-160, -150)
-    calData_R.destinationPoints = [19, 9, 14, 4] # [0, 5, 10, 15]
+    calData_R.destinationPoints = [18, 8, 14, 4] # [0, 5, 10, 15]
     calData_R, transformed_image_R = getCalibration(calData_R, snapshot_cam_R, original_R)
     calData_R.calImage = original_R
     cv2.imshow('transformed_R', transformed_image_R)
@@ -49,10 +47,7 @@ def calibrateRight(snapshot_cam_R, original_R):
 
 def calibrateLeft(snapshot_cam_L, original_L):
     calData_L = CalibrationData()
-
-    calData_L.angleZone_horizontal = (10, 20)
-    calData_L.angleZone_vertical = (-50 , -25)
-    calData_L.destinationPoints = [9, 19, 15, 5] # [0, 5, 10, 15]
+    calData_L.destinationPoints = [11, 1, 15, 5] # [0, 5, 10, 15]
     calData_L, transformed_image_L = getCalibration(calData_L, snapshot_cam_L, original_L)
     calData_L.calImage = original_L
     cv2.imshow('transformed_L', transformed_image_L)

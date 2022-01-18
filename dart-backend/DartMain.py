@@ -177,7 +177,7 @@ def test_dart_main_loop():
         time.sleep(4)
 
 if __name__ == "__main__":
-    mode = "Test_Dart_Main_Loop"
+    mode = "Calibrate"
     if mode == "Main_Loop":
         dart_main_loop()
     elif mode == "Test_Dart_Detection":
@@ -193,15 +193,15 @@ if __name__ == "__main__":
         websocket.start_server("localhost", 9000)
     
     elif mode == "Calibrate":
-        videoStream_L, snapshot_cam_L = getVideoStream(src=0)
-        videoStream_R, snapshot_cam_R = getVideoStream(src=1)
+        videoStream_L, snapshot_cam_L = getVideoStream(src=1)
+        videoStream_R, snapshot_cam_R = getVideoStream(src=0)
 
         cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(snapshot_cam_L, snapshot_cam_R)
     
     elif mode == "take_snapshots":
         
-        videoStream_L, snapshot_cam_L = getVideoStream(src=0)
-        videoStream_R, snapshot_cam_R = getVideoStream(src=1)
+        videoStream_L, snapshot_cam_L = getVideoStream(src=1)
+        videoStream_R, snapshot_cam_R = getVideoStream(src=0)
         empty_L = snapshot_cam_L.copy()
         empty_R = snapshot_cam_R.copy()
         cal_data_L, transformed_image_L, cal_data_R, transformed_image_R  = calibrateAll(empty_L, empty_R, 'loop_specialcase_test/calibrationData_L.pkl', 'loop_specialcase_test/calibrationData_R.pkl')
