@@ -14,7 +14,7 @@ if __name__ == "__main__":
     elif mode == "Static_Image_Test_One_Camera_Loop":
         oneCamera.test_one_camera_loop(websocket)
     elif mode == "One_Camera_Loop":
-        main_loop = threading.Thread(target=oneCamera.one_camera_loop(websocket))
+        main_loop = threading.Thread(target=oneCamera.one_camera_loop, args=(websocket,))
         main_loop.start()
         # start websocket
         websocket.start_server("localhost", 9000)
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     elif mode == "Static_Image_Test_Dual_Camera_Loop":
         dualCamera.test_dual_camera_loop(websocket)
     elif mode == "Dual_Camera_Loop":
-        main_loop = threading.Thread(target=dualCamera.dual_camera_loop(websocket))
+        main_loop = threading.Thread(target=dualCamera.dual_camera_loop, args=(websocket,))
         main_loop.start()
         # start websocket
         websocket.start_server("localhost", 9000)

@@ -115,6 +115,7 @@ export default {
       this.websocket.send(JSON.stringify({
         "request": 13
         }))
+      this.round = -1
       //this.playerCount = (this.playerCount + 4) % this.players.length;
       //this.currentPlayer = this.players[0];
       //let temp_player = this.currentPlayer

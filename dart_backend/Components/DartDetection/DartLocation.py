@@ -9,7 +9,8 @@ for index, point in enumerate(game_points_array):
     offset = (index - 5) % len(game_points_array)
     map_board_game_points[offset] = point
 
-def showLatestDartLocationOnBoard(transformed_image, locatedDart_coord, cal_data):
+def showLatestDartLocationOnBoard(image, locatedDart_coord, cal_data):
+    transformed_image = image.copy()
     dart_loc_temp = np.array([[locatedDart_coord[0], locatedDart_coord[1]]], dtype="float32")
     dart_loc_temp = np.array([dart_loc_temp])
     dart_loc = cv2.perspectiveTransform(dart_loc_temp, cal_data.transformation_matrix)
@@ -45,7 +46,7 @@ def detect_segment(new_dart_coord, calData):
     theta = math.degrees(math.atan2(y - center, x - center))
     if theta < 0:
         theta = theta + 360
-    result_point_amount = -1
+    result_point_amount = 0
     
     for i in range(0, 20):
         sectorAngle1 = getSectorAngle(i,calData)
@@ -66,7 +67,7 @@ def detect_segment(new_dart_coord, calData):
             elif result_ring == 5:
                 result_point_amount = map_board_game_points[index] * 2
             elif result_ring == -1:
-                result_point_amount = -1
+                result_point_amount = 0
             else:
                 result_point_amount = map_board_game_points[index]
             

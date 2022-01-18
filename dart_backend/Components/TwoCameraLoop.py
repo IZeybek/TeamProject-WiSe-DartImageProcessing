@@ -27,7 +27,7 @@ def dual_camera_loop(websocket):
             # TODO: add new Calibration instead of loading
             calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
             websocket.CALIBRATION_DONE.set()
-
+        
         # reset reference image
         websocket.Global_LOCK.acquire()
         if websocket.IMAGE_COUNT == 0:
@@ -65,24 +65,24 @@ def dual_camera_loop(websocket):
 
             # calc result value
             new_dart_coord_L, transformed_image_L = showLatestDartLocationOnBoard(draw_L, result_L, calData_L)
-            
             new_dart_coord_R, transformed_image_R = showLatestDartLocationOnBoard(draw_R, result_R, calData_R)
-          
-
             
             game_point_result_L = detect_segment(new_dart_coord_L, calData_L)
             game_point_result_R = detect_segment(new_dart_coord_R, calData_R) 
 
-            print("Detected dart: ")
-            print("     Left  -> " + str(game_point_result_L))
-            print("     Right -> " + str(game_point_result_R))
             chosen_point = choose_better_dart(new_dart_coord_L, new_dart_coord_R, dart_contour_points_L,
                                               dart_contour_points_R)
+            if chosen_point == None:
+                print("Error pls try again")
+                continue
             
             new_diff_score = detect_segment(chosen_point, calData_R) 
             cv2.circle(transformed_image_L, (int(chosen_point[0]), int(chosen_point[1])), radius=7, color=(255, 0, 255), thickness=-1)
             cv2.circle(transformed_image_R, (int(chosen_point[0]), int(chosen_point[1])), radius=7, color=(255, 0, 255), thickness=-1)
             
+            print("Detected dart: ")
+            print("     Left  -> " + str(game_point_result_L))
+            print("     Right -> " + str(game_point_result_R))
             print("     The chosen score is: " + str(new_diff_score))
 
             # send result
@@ -92,23 +92,25 @@ def dual_camera_loop(websocket):
             websocket.increase_image_count()
             reference_image_L = snapshot_cam_L
             reference_image_R = snapshot_cam_R
-
+        
+        
         cv2.imshow("point detected_L", transformed_image_L)
         cv2.imshow("point detected_R", transformed_image_R)
+            # check if round is done and wait if true and reset reference images afterwards
+        websocket.Global_LOCK.acquire()
+        if websocket.IMAGE_COUNT >= 3:
+            websocket.Global_LOCK.release()
+            websocket.ROUND_DONE.wait()
+            _L, camRGB_L = videoStream_L.read()
+            _R, camRGB_R = videoStream_R.read()
+            snapshot_cam_L = camRGB_L.copy()
+            snapshot_cam_R = camRGB_R.copy()
+            cv2.imshow("point detected_L", snapshot_cam_L)
+            cv2.imshow("point detected_R", snapshot_cam_R)
+            websocket.ROUND_DONE.clear()
+        else:
+            websocket.Global_LOCK.release()
 
-        # check if round is done and wait if true and reset reference images afterwards
-        # websocket.Global_LOCK.acquire()
-        # if websocket.IMAGE_COUNT >= 3:
-        #     websocket.Global_LOCK.release()
-        #     websocket.ROUND_DONE.wait()
-        #     _L, camRGB_L = videoStream_L.read()
-        #     _R, camRGB_R = videoStream_L.read()
-        #     snapshot_cam_L = camRGB_L.copy()
-        #     snapshot_cam_R = camRGB_R.copy()
-        #     websocket.ROUND_DONE.clear()
-        # else:
-        #     websocket.Global_LOCK.release()
-        
         waitForKey()
         time.sleep(2)
 

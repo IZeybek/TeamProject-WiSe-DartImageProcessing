@@ -319,9 +319,10 @@ def choose_better_dart(dart1, dart2, contour1, contour2):
                 return dart1
             else:
                 return dart2
-    else:
+    elif firstArea < 25000 or secondArea < 25000:
         if firstArea < secondArea:
             return dart1
         else:
             return dart2
-    
+    else:
+        return None
