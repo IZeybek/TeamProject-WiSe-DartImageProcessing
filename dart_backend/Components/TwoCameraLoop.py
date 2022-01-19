@@ -25,7 +25,10 @@ def dual_camera_loop(websocket):
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             # TODO: add new Calibration instead of loading
+            print("calibrating...")
             calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
+            
+            print("calibrating DONE!")
             websocket.CALIBRATION_DONE.set()
         
         # reset reference image
@@ -36,10 +39,8 @@ def dual_camera_loop(websocket):
             test_image_idx = 0
         websocket.Global_LOCK.release()
 
-        # get new image and calculate dart tip
-        _L, camRGB_L = videoStream_L.read()
-        _R, camRGB_R = videoStream_R.read()
-
+        camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R)
+    
         snapshot_cam_L = camRGB_L.copy()
         snapshot_cam_R = camRGB_R.copy()
 
@@ -71,7 +72,7 @@ def dual_camera_loop(websocket):
             game_point_result_R = detect_segment(new_dart_coord_R, calData_R) 
 
             chosen_point = choose_better_dart(new_dart_coord_L, new_dart_coord_R, dart_contour_points_L,
-                                              dart_contour_points_R)
+                                            dart_contour_points_R)
             if chosen_point == None:
                 print("Error pls try again")
                 continue
@@ -96,13 +97,14 @@ def dual_camera_loop(websocket):
         
         cv2.imshow("point detected_L", transformed_image_L)
         cv2.imshow("point detected_R", transformed_image_R)
+        
+        cv2.waitKey(1)
             # check if round is done and wait if true and reset reference images afterwards
         websocket.Global_LOCK.acquire()
         if websocket.IMAGE_COUNT >= 3:
             websocket.Global_LOCK.release()
             websocket.ROUND_DONE.wait()
-            _L, camRGB_L = videoStream_L.read()
-            _R, camRGB_R = videoStream_R.read()
+            camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R)
             snapshot_cam_L = camRGB_L.copy()
             snapshot_cam_R = camRGB_R.copy()
             cv2.imshow("point detected_L", snapshot_cam_L)
@@ -111,8 +113,34 @@ def dual_camera_loop(websocket):
         else:
             websocket.Global_LOCK.release()
 
-        waitForKey()
         time.sleep(2)
+
+
+def waitForStabilizedImage(videoStream_L,videoStream_R):
+    # get new image and calculate dart tip
+    _L, temp_reference_L = videoStream_L.read()
+    _R, temp_reference_R = videoStream_R.read()
+    
+    snapshot_cam_L = temp_reference_L.copy()
+    snapshot_cam_R = temp_reference_R.copy()
+    mse_R = 45
+    mse_L = 45
+    while mse_L > 40 or mse_R > 40:
+        print("shaking")
+        time.sleep(2)
+        
+        _L, new_L = videoStream_L.read()
+        _R, new_R = videoStream_R.read()
+        snapshot_cam_L = new_L.copy()
+        snapshot_cam_R = new_R.copy()
+        
+        mse_L, _, _ = process_images(temp_reference_L.copy(), snapshot_cam_L)
+        mse_R, _, _ = process_images(temp_reference_R.copy(), snapshot_cam_R)
+        temp_reference_L = new_L.copy()
+        temp_reference_R = new_R.copy()
+    
+    
+    return snapshot_cam_L, snapshot_cam_R
 
 def waitForKey():
     keyInput = cv2.waitKey(0)

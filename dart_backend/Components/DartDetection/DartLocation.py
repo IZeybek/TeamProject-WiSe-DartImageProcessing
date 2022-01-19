@@ -54,6 +54,8 @@ def detect_segment(new_dart_coord, calData):
         sectorAngle2 = getSectorAngle(nextIndex,calData)
         degree1 = math.degrees(sectorAngle1)
         degree2 = math.degrees(sectorAngle2)
+        if i == 19:
+            degree2 += 360
         
         if  degree1 < theta < degree2:
             index = (i + 1) % 20
