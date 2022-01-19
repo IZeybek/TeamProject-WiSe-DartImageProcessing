@@ -35,7 +35,7 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
                 if orientation == 'left':
                     calData_L, draw_L = calibrateLeft(temp_reference_L, temp_reference_L.copy())
                 elif orientation == 'right':
-                    calData_R, draw_R = calibrateLeft(temp_reference_R, temp_reference_R.copy())
+                    calData_R, draw_R = calibrateRight(temp_reference_R, temp_reference_R.copy())
                 elif orientation == 'both':
                     calData_L, draw_L, calData_R, draw_R = calibrateAll(temp_reference_L, temp_reference_R)
             except:

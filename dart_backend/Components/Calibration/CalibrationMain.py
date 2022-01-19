@@ -41,7 +41,7 @@ def calibrateRight(snapshot_cam_R, original_R, filename_R='Calibration_standard_
     calData_R, transformed_image_R = getCalibration(calData_R, snapshot_cam_R, original_R)
     calData_R.calImage = original_R
     cv2.imshow('transformed_R', transformed_image_R)
-    waitForKey()
+    cv2.waitKey(1)
     saveCalFile(filename_R, calData_R)
     cv2.destroyAllWindows()
     return calData_R, transformed_image_R
@@ -52,7 +52,7 @@ def calibrateLeft(snapshot_cam_L, original_L, filename_L='Calibration_standard_o
     calData_L, transformed_image_L = getCalibration(calData_L, snapshot_cam_L, original_L)
     calData_L.calImage = original_L
     cv2.imshow('transformed_L', transformed_image_L)
-    waitForKey()
+    cv2.waitKey(1)
     saveCalFile(filename_L, calData_L)
     cv2.destroyAllWindows()
     return calData_L, transformed_image_L

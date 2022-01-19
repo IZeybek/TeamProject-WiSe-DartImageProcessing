@@ -44,14 +44,14 @@ def take_snapshots():
     cv2.imwrite("loop_test/cam_R_dart3.jpg", snapshot_cam_R)
 
 
-def test_calibration():
+def test_calibration_both_videostreams():
     videoStream_L, snapshot_cam_L = getVideoStream(src=0)
     videoStream_R, snapshot_cam_R = getVideoStream(src=1)
 
     cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(snapshot_cam_L, snapshot_cam_R)
 
 
-def test_calibration_2(path_L, path_R):
+def test_calibration_both_imread(path_L, path_R):
     image_L = cv2.imread(path_L)
     image_R = cv2.imread(path_R)
     cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(image_L, image_R)
@@ -66,7 +66,7 @@ def test_calibration_Right(image_R, filename_R='Calibration_standard_output/cali
     saveCalFile(filename_R, calData_R)
     cv2.destroyAllWindows()
 
-def test_calibration_2(path_L, path_R):
+def test_calibration_both_imread(path_L, path_R):
     image_L = cv2.imread(path_L)
     image_R = cv2.imread(path_R)
     cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(image_L, image_R)

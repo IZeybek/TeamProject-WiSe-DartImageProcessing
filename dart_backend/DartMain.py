@@ -48,9 +48,9 @@ if __name__ == "__main__":
     elif mode == "Test_Dart_Detection":
         test.test_dart_detection()
     elif mode == "Calibrate":
-        test.test_calibration()
+        test.test_calibration_both_videostreams()
     elif mode == "Calibrate2":
-        test.test_calibration_2("loop_specialcase_test/calibrationData_L.jpg", "loop_specialcase_test/calibrationData_R.jpg")
+        test.test_calibration_both_imread("loop_specialcase_test/calibrationData_L.jpg", "loop_specialcase_test/calibrationData_R.jpg")
     elif mode == "take_snapshots":
         test.take_snapshots()
         
