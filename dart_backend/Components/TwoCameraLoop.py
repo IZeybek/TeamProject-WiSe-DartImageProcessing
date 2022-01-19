@@ -5,31 +5,45 @@ from .Calibration.VideoCapture import *
 import time
 
 
-def dual_camera_loop(websocket):
+def dual_camera_loop(websocket, calibrateOrRead="readCal"):
     videoStream_L, snapshot_cam_L = getVideoStream(src=1)
     videoStream_R, snapshot_cam_R = getVideoStream(src=0)
 
     reference_image_L = snapshot_cam_L.copy()
     reference_image_R = snapshot_cam_R.copy()
 
-    # calData_L, draw_L, calData_R, draw_R  = calibrateAll(snapshot_cam_L, snapshot_cam_R)
+    # 
     # TODO: add new Calibration instead of loading
-    calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
+    if calibrateOrRead == "readCal":
+        calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
+    elif calibrateOrRead == 'newCal':
+        calData_L, draw_L, calData_R, draw_R  = calibrateAll(snapshot_cam_L, snapshot_cam_R)
+        
     websocket.CALIBRATION_DONE.set()
-    # snapshot_cam_L = calData_L.calImage.copy()
-    cv2.destroyAllWindows()
+    
+    
     # main Loop
     transformed_image_L = reference_image_L
     transformed_image_R = reference_image_R
     while True:
         # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
-            # TODO: add new Calibration instead of loading
             print("calibrating...")
-            calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
+            try:
+                temp_reference_L, temp_reference_R = waitForStabilizedImage(videoStream_L, videoStream_R, websocket)
+                orientation = websocket.get_Orientation()
+                if orientation == 'left':
+                    calData_L, draw_L = calibrateLeft(temp_reference_L, temp_reference_L.copy())
+                elif orientation == 'right':
+                    calData_R, draw_R = calibrateLeft(temp_reference_R, temp_reference_R.copy())
+                elif orientation == 'both':
+                    calData_L, draw_L, calData_R, draw_R = calibrateAll(temp_reference_L, temp_reference_R)
+            except:
+                print("Error while calibrating!")
             
             print("calibrating DONE!")
             websocket.CALIBRATION_DONE.set()
+            websocket.reset_image_count()
         
         # reset reference image
         websocket.Global_LOCK.acquire()
@@ -39,7 +53,7 @@ def dual_camera_loop(websocket):
             test_image_idx = 0
         websocket.Global_LOCK.release()
 
-        camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R)
+        camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R, websocket)
     
         snapshot_cam_L = camRGB_L.copy()
         snapshot_cam_R = camRGB_R.copy()
@@ -52,7 +66,7 @@ def dual_camera_loop(websocket):
         print('mse_L', mse_L, 'mse_R', mse_R)
         
         # get dart tip value if image difference is high enough
-        if mse_L > 40 or mse_R > 40:
+        if 40 < mse_L < 150 or 40 < mse_R < 150:
             # draw images
             cv2.imshow("L - reference_image.jpg", reference_image_L)
             cv2.rectangle(rectangle_L, dart_contour_points_L[0], dart_contour_points_L[1], (0, 0, 255), 2)
@@ -86,13 +100,15 @@ def dual_camera_loop(websocket):
             print("     Right -> " + str(game_point_result_R))
             print("     The chosen score is: " + str(new_diff_score))
 
-            # send result
-            websocket.send_changes({"request": 1, "value": new_diff_score})
 
             # increase count, replace reference image
             websocket.increase_image_count()
             reference_image_L = snapshot_cam_L
             reference_image_R = snapshot_cam_R
+            
+            # send result
+            websocket.send_changes({"request": 1, "value": new_diff_score})
+            websocket.send_counter()
         
         
         cv2.imshow("point detected_L", transformed_image_L)
@@ -102,9 +118,12 @@ def dual_camera_loop(websocket):
             # check if round is done and wait if true and reset reference images afterwards
         websocket.Global_LOCK.acquire()
         if websocket.IMAGE_COUNT >= 3:
+            
             websocket.Global_LOCK.release()
+            websocket.send_stillLoading("roundDone")
             websocket.ROUND_DONE.wait()
-            camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R)
+            camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R,websocket)
+            websocket.send_stillLoading("loading")
             snapshot_cam_L = camRGB_L.copy()
             snapshot_cam_R = camRGB_R.copy()
             cv2.imshow("point detected_L", snapshot_cam_L)
@@ -112,11 +131,13 @@ def dual_camera_loop(websocket):
             websocket.ROUND_DONE.clear()
         else:
             websocket.Global_LOCK.release()
+            
+        websocket.send_stillLoading("ready")
 
         time.sleep(2)
 
 
-def waitForStabilizedImage(videoStream_L,videoStream_R):
+def waitForStabilizedImage(videoStream_L,videoStream_R,websocket):
     # get new image and calculate dart tip
     _L, temp_reference_L = videoStream_L.read()
     _R, temp_reference_R = videoStream_R.read()
@@ -125,10 +146,16 @@ def waitForStabilizedImage(videoStream_L,videoStream_R):
     snapshot_cam_R = temp_reference_R.copy()
     mse_R = 45
     mse_L = 45
+    counter = 0
     while mse_L > 40 or mse_R > 40:
+     
         print("shaking")
+        
         time.sleep(2)
         
+        counter += 1
+        if counter == 2:
+            websocket.send_stillLoading("loading")
         _L, new_L = videoStream_L.read()
         _R, new_R = videoStream_R.read()
         snapshot_cam_L = new_L.copy()
@@ -138,7 +165,6 @@ def waitForStabilizedImage(videoStream_L,videoStream_R):
         mse_R, _, _ = process_images(temp_reference_R.copy(), snapshot_cam_R)
         temp_reference_L = new_L.copy()
         temp_reference_R = new_R.copy()
-    
     
     return snapshot_cam_L, snapshot_cam_R
 
@@ -234,6 +260,7 @@ def test_dual_camera_loop(websocket):
 
             # increase count, replace reference image
             websocket.increase_image_count()
+            websocket.send_counter()
             reference_image_L = images_L[test_image_idx]
             reference_image_R = images_R[test_image_idx]
 

@@ -30,37 +30,38 @@ def calibrateAll(cam_L, cam_R, filename_L='Calibration_standard_output/calibrati
     original_R = snapshot_cam_R.copy()
     original_L = snapshot_cam_L.copy()
     
-    calData_L, transformed_image_L = calibrateLeft(snapshot_cam_L, original_L)
-    saveCalFile(filename_L, calData_L)
-    calData_R, transformed_image_R = calibrateRight(snapshot_cam_R, original_R)
-    saveCalFile(filename_R, calData_R)
+    calData_L, transformed_image_L = calibrateLeft(snapshot_cam_L, original_L, filename_L)
+    calData_R, transformed_image_R = calibrateRight(snapshot_cam_R, original_R, filename_R)
 
     return calData_L, transformed_image_L, calData_R, transformed_image_R
 
-def calibrateRight(snapshot_cam_R, original_R):
+def calibrateRight(snapshot_cam_R, original_R, filename_R='Calibration_standard_output/calibrationData_R.pkl'):
     calData_R = CalibrationData()
     calData_R.destinationPoints = [18, 8, 14, 4]
     calData_R, transformed_image_R = getCalibration(calData_R, snapshot_cam_R, original_R)
     calData_R.calImage = original_R
     cv2.imshow('transformed_R', transformed_image_R)
     waitForKey()
-
+    saveCalFile(filename_R, calData_R)
+    cv2.destroyAllWindows()
     return calData_R, transformed_image_R
 
-def calibrateLeft(snapshot_cam_L, original_L):
+def calibrateLeft(snapshot_cam_L, original_L, filename_L='Calibration_standard_output/calibrationData_L.pkl'):
     calData_L = CalibrationData()
     calData_L.destinationPoints = [11, 1, 15, 5]
     calData_L, transformed_image_L = getCalibration(calData_L, snapshot_cam_L, original_L)
     calData_L.calImage = original_L
     cv2.imshow('transformed_L', transformed_image_L)
     waitForKey()
-
+    saveCalFile(filename_L, calData_L)
+    cv2.destroyAllWindows()
     return calData_L, transformed_image_L
 
 def saveCalFile(filename, calData):
     calFile = open(filename, "wb")
     pickle.dump(calData, calFile, 0)
     calFile.close()
+    print("file saved to: ", filename)
 
 def readCalibrationData(filename_L, filename_R):
 

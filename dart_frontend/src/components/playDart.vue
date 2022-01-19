@@ -18,24 +18,50 @@
                   <win :currentPlayer="currentPlayer"></win>
                 </div>
                 <div v-else>
-                  <current-player :currentPlayer="currentPlayer"></current-player>
-                  </div>
+                  <current-player
+                    :currentPlayer="currentPlayer"
+                    :serverState="serverState"
+                  ></current-player>
+                </div>
                 <!--current-player :currentPlayer="currentPlayer"></current-player-->
                 <div class="nextPlayer">
-                  <v-btn @click="callibration()" small dark>Calibration</v-btn>
+                  <v-btn style="margin: 5px" @click="callibration('left')" small dark>calibrate left?</v-btn>
+                  <v-btn style="margin: 5px" @click="callibration('both')" small dark>calibrate both?</v-btn>
+                  <v-btn style="margin: 5px" @click="callibration('right')" small dark>calibrate right?</v-btn>
                 </div>
               </v-col>
             </div>
           </div>
         </div>
         <div class="col-sm-2 col-12">
-          <div class="v-sheet theme--light rounded-lg"
-            style="min-height: 268px">
-          <dart-scorer :dartScores="dartScores"></dart-scorer>
-          <div class="justify-center" style ="text-align:center">
-            <v-btn style ="" v-show="!win" @click="changePlayer()" small dark>done?</v-btn>
-            <v-btn v-show="win" @click="init()" small dark>New Game?</v-btn>
-          </div>
+          <div
+            class="v-sheet theme--light rounded-lg"
+            style="min-height: 268px"
+          >
+            <dart-scorer
+              :dartScores="dartScores"
+              :round="round"
+              :websocket="websocket"
+            ></dart-scorer>
+            <div class="justify-center" style="text-align: center">
+              <v-btn
+                style="margin: 5px"
+                v-show="!win"
+                @click="changePlayer()"
+                small
+                dark
+                >done?</v-btn
+              >
+              <v-btn
+                style="margin: 5px"
+                v-show="!win"
+                @click="resetCurrentPlayerAttempts()"
+                small
+                dark
+                >reset?</v-btn
+              >
+              <v-btn v-show="win" @click="init()" small dark>New Game?</v-btn>
+            </div>
           </div>
         </div>
       </div>
@@ -48,7 +74,7 @@ import ResizeText from "vue-resize-text";
 import PlayerList from "./PlayerList.vue";
 import CurrentPlayer from "./CurrentPlayer.vue";
 import DartScorer from "./DartScorer.vue";
-import Win from "./Win.vue"
+import Win from "./Win.vue";
 
 export default {
   name: "playDart",
@@ -65,67 +91,89 @@ export default {
       isHidden: false,
       players: [],
       correct: "",
-      round:-1,
+      round: 0,
       playerCount: 0,
-      websocket:null,
-      pointsweb:[],
+      websocket: null,
+      pointsweb: [],
       currentPlayer: {
         name: "player.name",
         score: 301,
         throws: [],
       },
       dartScores: [],
+      serverState: "ready",
     };
   },
-   filters: {
-     totext(serverscore) {
-       if (serverscore == 0) {
-         return "";
-       }
-       if (serverscore == 0) {
-         return serverscore;
-       }
-     },
-   },
+  filters: {
+    totext(serverscore) {
+      if (serverscore == 0) {
+        return "";
+      }
+      if (serverscore == 0) {
+        return serverscore;
+      }
+    },
+  },
   created() {
     this.init();
-    this.currentPlayer = this.players[0]
-    let temp_player=this.players.shift()
-    this.players.push(temp_player)
-    this.createWebSocket()
-    setTimeout(() => { this.websocket.send(JSON.stringify({
-        "request": 404
-        })) }, 2000);
+    this.currentPlayer = this.players[0];
+    let temp_player = this.players.shift();
+    this.players.push(temp_player);
+    this.createWebSocket();
+    setTimeout(() => {
+      this.websocket.send(
+        JSON.stringify({
+          request: 13,
+        })
+      );
+    }, 2000);
   },
   methods: {
+    resetCurrentPlayerAttempts() {
+      this.round = 0;
+      for (let i = 0; i < 3; i++) {
+        this.dartScores[i].score = 0;
+      }
+      this.websocket.send(
+        JSON.stringify({
+          request: 13,
+        })
+      );
+    },
     changePlayer() {
       //this.$root.$refs.PlayerList.popout(this.currentPlayer);
-      let finalscore = this.$root.$refs.DartScorer.getScore_all_tries_together();
-      this.calculateScore(finalscore)
-      if(this.win) {
-        console.log("test")
+      let finalscore =
+        this.$root.$refs.DartScorer.getScore_all_tries_together();
+      this.calculateScore(finalscore);
+      if (this.win) {
+        console.log("test");
       } else {
         this.currentPlayer = this.players[0];
-        let temp_player = this.currentPlayer
+        let temp_player = this.currentPlayer;
         this.$root.$refs.PlayerList.popout(temp_player);
       }
-      for(let i = 0; i < 3; i++) {
-        this.dartScores[i].score = 0
+      for (let i = 0; i < 3; i++) {
+        this.dartScores[i].score = 0;
       }
-      this.websocket.send(JSON.stringify({
-        "request": 13
-        }))
-      this.round = -1
+      this.websocket.send(
+        JSON.stringify({
+          request: 13,
+        })
+      );
+      this.round = 0;
       //this.playerCount = (this.playerCount + 4) % this.players.length;
       //this.currentPlayer = this.players[0];
       //let temp_player = this.currentPlayer
       //this.$root.$refs.PlayerList.popout(temp_player);
+      this.serverState = "loading";
     },
 
     init() {
+      this.round = 0;
       const darts = [];
+
       for (let i = 0; i < 3; i++) {
-        darts.push({score:0,}); // some changes for testing
+        darts.push({ score: 0 }); // some changes for testing
         // if (i == 0) {
         //   darts.push({
         //     score: 5,
@@ -137,7 +185,7 @@ export default {
         // }
       }
       this.dartScores = darts;
-      this.win=false;
+      this.win = false;
       this.players = this.playernames.map((player) => ({
         name: player.name,
         score: this.initialScore || 301,
@@ -151,68 +199,86 @@ export default {
       // implement later
       console.log("life is good " + correct);
     },
-    calculateScore(finalscore){
+    calculateScore(finalscore) {
       let tmp_score = this.currentPlayer.score;
       tmp_score = tmp_score - finalscore;
-      if(tmp_score > 0) {
-        this.currentPlayer.score = tmp_score
-      } else if(tmp_score == 0) {
-        this.currentPlayer.score = tmp_score
+      if (tmp_score > 0) {
+        this.currentPlayer.score = tmp_score;
+      } else if (tmp_score == 0) {
+        this.currentPlayer.score = tmp_score;
         this.win = true;
       } else {
-        alert("try again")
+        alert("try again");
       }
     },
     sendServerNextPlayerStatus() {
-      this.websocket.send(JSON.stringify({
-        "request": 13
-        }))
+      this.websocket.send(
+        JSON.stringify({
+          request: 13,
+        })
+      );
     },
 
     createWebSocket() {
-      this.websocket = new WebSocket("ws://127.0.0.1:9000")
-      this.websocket.onopen =()=>{
-        console.log("Connected to Backend")
-      }
-      this.websocket.onclose = function() {
-        console.log("connection with websocket closed")
-      }
-      this.websocket.onerror =function(error) {
-        console.log(error)
-        console.log("WebSocket is closed now."+error);
-      }
-      this.websocket.onmessage = (e) => {
-        let content = JSON.parse(e.data)
-        console.log(content)
-        let number = content.request
-        if(number == 1) { // 404
-          this.round = this.round +1
-          this.dartScores[this.round].score = content.value
-            console.log("1." + content.value)
-        } else if(number == 2){
-          console.log("2."+ content)
+      this.websocket = new WebSocket("ws://127.0.0.1:9000");
 
+      this.websocket.onopen = () => {
+        console.log("Connected to Backend");
+      };
+      this.websocket.onclose = function () {
+        console.log("connection with websocket closed");
+      };
+      this.websocket.onerror = function (error) {
+        console.log(error);
+        console.log("WebSocket is closed now." + error);
+      };
+      this.websocket.onmessage = (e) => {
+        let content = JSON.parse(e.data);
+        console.log(content);
+        let number = content.request;
+        if (number == 1) {
+          // 404
+          this.dartScores[this.round].score = content.value;
+          console.log("1." + content.value);
+
+          // this.round++
+        } else if (number == 2) {
+          console.log("2." + content);
+          this.resetCurrentPlayerAttempts()
+        } else if (number == 14) {
+          this.round = content.value;
+
+          console.log("recieved 14 roundcounter: ", content.value);
+        } else if (number == 15) {
+          this.serverState = content.value;
+
+          console.log("waiting for stable image", content.value);
         } else {
-          console.log("3." + content)
+          console.log("3." + content);
         }
+
         // console.log(number)
         // this.round = this.round +1
         // this.serverscore = number
-
 
         // this.serverscore = number
         // this.dartScores[0].score = number
         //this.$data.serverscore = number;
         //this.serverscore = JSON.parse(e.data).value
         //console.log(this.serverscore)
-                // if(typeof e.data ==="string") {
+        // if(typeof e.data ==="string") {
         //   let json = JSON.parse(e.data);
         // }
-      }
+      };
     },
-    callibration(){
-      console.log(this.serverscore)
-    }
+    callibration(orientation) {
+      this.websocket.send(
+        JSON.stringify({
+          request: 11, value: orientation
+        })
+      );
+      console.log("trigger callibration for: ", orientation);
+    },
   },
 };
 </script>

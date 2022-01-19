@@ -9,13 +9,30 @@
       </v-list-item-subtitle>
       <div
         class="scorePoint"
+        :style="{
+          padding: '5px',
+          'font-size': '150px',
+          'text-align': 'center',
+          color: getState(),
+        }"
         v-resize-text="{
           ratio: 0.3,
-          minFontSize: '16px',
-          maxFontSize: '400px',
+          minFontSize: '5px',
+          maxFontSize: '200px',
         }"
       >
         {{ currentPlayer.score }}
+      </div>
+      <div
+        class="serverState"
+        :style="{ padding: '10px', 'font-size': '30px', color: getState() }"
+        v-resize-text="{
+          ratio: 0.3,
+          minFontSize: '16px',
+          maxFontSize: '50px',
+        }"
+      >
+        {{ serverState }}
       </div>
     </div>
   </div>
@@ -26,14 +43,24 @@ import ResizeText from "vue-resize-text";
 
 export default {
   name: "CurrentPlayer",
-  props: ["currentPlayer"],
+  props: ["currentPlayer", "serverState"],
   directives: {
     ResizeText,
   },
   data: function () {
     return {};
   },
-  methods: {},
+  methods: {
+    getState() {
+      if (this.serverState == "loading") {
+        return "yellow";
+      } else if (this.serverState == "roundDone") {
+        return "orange";
+      } else if (this.serverState == "ready") {
+        ("lightgreen");
+      }
+    },
+  },
 };
 </script>
 
@@ -100,6 +127,12 @@ h3 {
 
 .scorePoint {
   font-size: 300px;
+  text-align: center;
+  color: lightgreen;
+}
+
+.serverState {
+  font-size: 100px;
   text-align: center;
   color: lightgreen;
 }

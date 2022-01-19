@@ -55,3 +55,18 @@ def test_calibration_2(path_L, path_R):
     image_L = cv2.imread(path_L)
     image_R = cv2.imread(path_R)
     cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(image_L, image_R)
+    
+def test_calibration_Left(image_L, filename_L='Calibration_standard_output/calibrationData_L.pkl'):
+    calData_L, transformed_image_L = calibrateLeft(image_L, image_L.copy())
+    saveCalFile(filename_L, calData_L)
+    cv2.destroyAllWindows()
+
+def test_calibration_Right(image_R, filename_R='Calibration_standard_output/calibrationData_R.pkl'):
+    calData_R, transformed_image_L = calibrateRight(image_R, image_R.copy())
+    saveCalFile(filename_R, calData_R)
+    cv2.destroyAllWindows()
+
+def test_calibration_2(path_L, path_R):
+    image_L = cv2.imread(path_L)
+    image_R = cv2.imread(path_R)
+    cal_data_L, transformed_image_L, cal_data_R, transformed_image_R = calibrateAll(image_L, image_R)

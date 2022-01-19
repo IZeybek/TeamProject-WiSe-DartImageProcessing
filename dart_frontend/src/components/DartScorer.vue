@@ -3,8 +3,9 @@
     <div
       v-for="(item, index) in dartScores"
       v-bind:key="index"
-      :style="{ padding: '5px', 'background-color': getTurn(index) }" 
-      @mouseover="item.showPencil = true"  @mouseleave="item.showPencil = false"
+      :style="{ padding: '5px', 'background-color': getTurn(index) }"
+      @mouseover="item.showPencil = true"
+      @mouseleave="item.showPencil = false"
     >
       <v-row cols="1" sm="8" class="ma-2">
         <div class="justify-center">
@@ -22,30 +23,38 @@
           <v-icon>mdi-equal</v-icon>{{ item.score }}
         </div>
         <div v-else style="padding-left: 8px">
-          <v-icon>mdi-equal</v-icon> {{ item.score }} <!-- change later-->
+          <v-icon>mdi-equal</v-icon> {{ item.score }}
+          <!-- change later-->
         </div>
         <!--div @mouseover="showPencil = true"  @mouseleave="showPencil = false"-->
-        <img v-show="item.showPencil" @click="item.showInput=true" @dblclick="item.showInput=false"
-            src="../assets/close.png"
-            width="30"
-            height="30"
-            style="padding: 2px;margin-left:38px;"
-          />
-          <img v-show="item.showPencil" @click="item.showInput=true" @dblclick="item.showInput=false"
-            src="../assets/pencil.png"
-            width="30"
-            height="30"
-            style="padding: 2px;margin-left:38px;"
-          />
+        <img
+          v-show="item.showPencil"
+          @click="deleteScore(index)"
+          @dblclick="item.showInput = false"
+          src="../assets/close.png"
+          width="30"
+          height="30"
+          style="padding: 2px; margin-left: 38px"
+        />
+        <img
+          v-show="item.showPencil"
+          @click="item.showInput = true"
+          @dblclick="item.showInput = false"
+          src="../assets/pencil.png"
+          width="30"
+          height="30"
+          style="padding: 2px; margin-left: 38px"
+        />
       </v-row>
-      <v-text-field v-show="item.showInput"
-                    type="number"
-                    class="mt-n6"
-                    v-model.number="corrected"
-                    placeholder="enter text"
-                    v-on:keyup.enter="onEnter(index)"
-                  ></v-text-field>
-                  
+      <v-text-field
+        v-show="item.showInput"
+        type="number"
+        class="mt-n6"
+        v-model.number="corrected"
+        placeholder="enter text"
+        v-on:keyup.enter="onEnter(index)"
+      ></v-text-field>
+
       <v-divider></v-divider>
     </div>
   </div>
@@ -54,51 +63,68 @@
 <script>
 export default {
   name: "DartScorer",
-  props: ["dartScores"],
+  props: ["dartScores", "round", "websocket"],
   data: function () {
     return {
-      showPencil:false,
-      showInput:false,
+      showPencil: false,
+      showInput: false,
       corrected: 0,
+      roundOffset: 0,
     };
   },
   created() {
     this.$root.$refs.DartScorer = this;
-    this.dartScores.forEach((item) =>{
-      this.$set(item,"showPencil",false)
-      this.$set(item,"showInput",false)
-    })
-    console.log(this.dartScores)
+    this.dartScores.forEach((item) => {
+      this.$set(item, "showPencil", false);
+      this.$set(item, "showInput", false);
+    });
+    this.roundOffset = 0;
+    console.log(this.dartScores);
   },
   methods: {
+    deleteScore(index) {
+      this.dartScores[index].score = 0;
+      this.websocket.send(
+        JSON.stringify({
+          request: 10,
+        })
+      );
+      this.roundOffset += 1;
+    },
     getTurn(index) {
+      if (this.round == 0) {
+        this.roundOffset = 0;
+      }
       if (this.dartScores[index].score == 0) {
-        return "lightgreen";
+        if (this.round + this.roundOffset == index) {
+          return "yellow";
+        }
+        return "lightgray";
       } else {
-        return "tranparent";
+        return "lightgreen";
       }
     },
-    onEnter: function(index) {
-      this.dartScores[index].showInput=false;
-      this.dartScores[index].score=this.corrected
+    onEnter: function (index) {
+      this.dartScores[index].showInput = false;
+      this.dartScores[index].score = this.corrected;
     },
     isNumeric(value) {
-      return Number.isInteger(value)
+      return Number.isInteger(value);
     },
-    getDebug(){
-      for(let i = 0;i<this.dartScores.length;i++) {
-        console.log(this.dartScores[i].score)
+    getDebug() {
+      for (let i = 0; i < this.dartScores.length; i++) {
+        console.log(this.dartScores[i].score);
       }
     },
-    getScore_all_tries_together(){
+    getScore_all_tries_together() {
       let finaladditonScore = 0;
-      for(let i= 0;i<this.dartScores.length;i++) {
-        finaladditonScore=finaladditonScore+this.dartScores[i].score
+      for (let i = 0; i < this.dartScores.length; i++) {
+        finaladditonScore = finaladditonScore + this.dartScores[i].score;
       }
       // for(let i= 0;i<this.dartScores.length;i++) {
       //   this.dartScores[i].score = 0
       // }    for later implementation
-      return finaladditonScore
+      return finaladditonScore;
     },
   },
 };

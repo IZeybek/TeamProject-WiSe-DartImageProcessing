@@ -206,8 +206,8 @@ def findSectorLines(edged, image_proc_img, Ellipse):
     fixed_vertical_slope= sys.maxsize
     
     filtered_Lines = []
-    horizontal_temp = 60
-    vertical_temp = 60
+    horizontal_temp = 75
+    vertical_temp = 75
 
     for line in x_line:
         # rho, theta = line[0]

@@ -2,6 +2,7 @@ import Components.OneCameraLoop as oneCamera
 import Components.TwoCameraLoop as dualCamera
 import Components.TestingSkripts as test
 import Components.Webserver.websocket as websocket
+from Components.Calibration.VideoCapture import getVideoStream
 import threading
 import time
 
@@ -31,6 +32,19 @@ if __name__ == "__main__":
         websocket.start_server("localhost", 9000)
 
     # Testing Skripts
+    # Testing Skripts
+    elif mode == "Calibrate-left":
+        
+        videoStream_L, snapshot_cam_L = getVideoStream(src=1)
+        _,image = videoStream_L.read()
+        test.test_calibration_Left(image.copy())
+        
+    elif mode == "Calibrate-right":
+        
+        videoStream_R, snapshot_cam_R = getVideoStream(src=0)
+        _,image = videoStream_R.read()
+        test.test_calibration_Right(image.copy())
+        
     elif mode == "Test_Dart_Detection":
         test.test_dart_detection()
     elif mode == "Calibrate":

@@ -303,13 +303,13 @@ def choose_better_dart(dart1, dart2, contour1, contour2):
     print('diffArea', diffArea)
     if firstArea > 30000 and secondArea > 30000:
         return None
-    elif diffArea < 10000:
+    elif diffArea < 8000:
         newDart = ((dart1[0] + dart2[0])/ 2, (dart1[1] + dart2[1])/ 2)
         distance = ((dart1[0] - dart2[0])/ 2, (dart1[1] - dart2[1])/ 2)
         
         newDart_distance = math.sqrt((distance[0]**2 +  distance[1]**2))*2
         print('newDart_distance', newDart_distance)
-        if newDart_distance < 25: 
+        if newDart_distance < 30: 
             return (newDart[0], newDart[1]) #(x,y)
         else:
             if firstArea > secondArea:

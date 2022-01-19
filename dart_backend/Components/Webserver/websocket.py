@@ -6,6 +6,7 @@ import threading
 CALIBRATION_DONE = threading.Event()
 ROUND_DONE = threading.Event()
 IMAGE_COUNT = 0
+CAL_ORIENTATION = ''
 WEBSOCKET = None
 Global_LOCK = threading.Lock()
 CONNECTIONS = set()
@@ -13,14 +14,48 @@ CONNECTIONS = set()
 def increase_image_count():
     global IMAGE_COUNT, Global_LOCK
     Global_LOCK.acquire()
-    IMAGE_COUNT = IMAGE_COUNT + 1
+    IMAGE_COUNT += 1
     Global_LOCK.release()
+
+def set_Orientation(orientation):
+    global CAL_ORIENTATION, Global_LOCK
+    Global_LOCK.acquire()
+    CAL_ORIENTATION = orientation
+    Global_LOCK.release()
+
+def get_Orientation():
+    orientation= ''
+    global CAL_ORIENTATION, Global_LOCK
+    Global_LOCK.acquire()
+    orientation = CAL_ORIENTATION
+    Global_LOCK.release()
+    return orientation
+
+def send_counter():
+    global IMAGE_COUNT, Global_LOCK
+    Global_LOCK.acquire()
+    send_changes({"request": 14, "value": IMAGE_COUNT})
+    print("send current counter")
+    Global_LOCK.release()
+
+    
+def send_stillLoading(msg):
+    send_changes({"request": 15, "value": msg})
+    # print("send current state")
 
 def reset_image_count():
     global IMAGE_COUNT, Global_LOCK
     Global_LOCK.acquire()
     IMAGE_COUNT = 0
     Global_LOCK.release()
+
+def get_image_count():
+    count = 0
+    global IMAGE_COUNT, Global_LOCK
+    Global_LOCK.acquire()
+    count = IMAGE_COUNT
+    Global_LOCK.release()
+    return count
 
 def start_server(ip, port):
     global WEBSOCKET
@@ -41,11 +76,14 @@ async def handle_requests(websocket, path):
 
             if json_message["request"] == 10:
                 # handle missed dart
+                
                 increase_image_count()
                 print("Noticed missed Dart - Data corrected")
 
             elif json_message["request"] == 11:
+                left_right = json_message["value"]
                 # handle new calibration
+                set_Orientation(left_right)
                 CALIBRATION_DONE.clear()
                 # TODO: start calibration
                 CALIBRATION_DONE.wait()
@@ -62,8 +100,11 @@ async def handle_requests(websocket, path):
 
             elif json_message["request"] == 13:
                 # handle start of next round
-                reset_image_count()
-                ROUND_DONE.set()
+                if get_image_count() >=3:
+                    reset_image_count()
+                    ROUND_DONE.set()
+                else:
+                    reset_image_count()
                 print("Started next Round!")
             elif json_message["request"] == 404:
                 print("Error Wrong Request!")
