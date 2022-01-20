@@ -6,15 +6,39 @@ from .PreProcessImageUtils import *
 from .VideoCapture import *
 import pickle
 
+def createTrackbarsMapping(calData):
+    cv2.namedWindow('point mapping', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('p1', 'point mapping', 0, 19, nothing)
+    cv2.createTrackbar('p2', 'point mapping', 0, 19, nothing)
+    cv2.createTrackbar('p3', 'point mapping', 0, 19, nothing)
+    cv2.createTrackbar('p4', 'point mapping', 0, 19, nothing)
+    cv2.setTrackbarPos('p1', 'point mapping', calData.destinationPoints[0])
+    cv2.setTrackbarPos('p2', 'point mapping', calData.destinationPoints[1])
+    cv2.setTrackbarPos('p3', 'point mapping', calData.destinationPoints[2])
+    cv2.setTrackbarPos('p4', 'point mapping', calData.destinationPoints[3])
+    cv2.createTrackbar('1 -> Done', 'point mapping', 0, 1, nothing)
+
 def getCalibration(calData, snapshot, original):
     # preprocess image in order to locate a well mapped Ellipse and to get two lines intersecting it in 4 diagonal points
     pre_processed_lines, pre_processed_ellipse = preProcessImage(snapshot)
     cv2.imshow("3-pre_processing_ellipse", pre_processed_ellipse)
 
     waitForKey()
-    calData.intersectPoints = getIntersectionPointsFromEllipse(snapshot, pre_processed_lines, pre_processed_ellipse)
-
-    waitForKey()
+    calData.intersectPoints, intersected_image = getIntersectionPointsFromEllipse(snapshot, pre_processed_lines, pre_processed_ellipse)
+    createTrackbarsMapping(calData)
+    while True:
+        p1 = cv2.getTrackbarPos('p1', 'point mapping')
+        p2 = cv2.getTrackbarPos('p2', 'point mapping')
+        p3 = cv2.getTrackbarPos('p3', 'point mapping')
+        p4 = cv2.getTrackbarPos('p4', 'point mapping')
+        cv2.waitKey(1)
+        cv2.imshow('intersections', intersected_image)
+        s = cv2.getTrackbarPos('1 -> Done', 'point mapping')
+        if s == 1:
+            cv2.destroyAllWindows()
+            break
+    
+    calData.destinationPoints = [p1,p2,p3,p4]
     calData.transformation_matrix, transformed_image = getFinalTransformationMatrix(original, calData)
     return calData, transformed_image
     

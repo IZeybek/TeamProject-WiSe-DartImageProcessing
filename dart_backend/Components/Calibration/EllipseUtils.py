@@ -81,6 +81,14 @@ def calculateDstPoint(i, calData):
 def nothing(x):
     pass
 
+def createTrackbarsForHoughline():
+    cv2.namedWindow('houghlines', cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('accuraccy', 'houghlines', 0, 200, nothing)
+    cv2.createTrackbar('votes', 'houghlines', 0, 200, nothing)
+    cv2.setTrackbarPos('accuraccy', 'houghlines', 160)
+    cv2.setTrackbarPos('votes', 'houghlines', 90)
+    cv2.createTrackbar('1 -> Done', 'houghlines', 0, 1, nothing)
+
 def createTrackbars():
     cv2.namedWindow('transformation', cv2.WINDOW_NORMAL)
     cv2.createTrackbar('p1_x', 'transformation', 0, 20, nothing)
@@ -184,7 +192,7 @@ def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_pr
     
     intersectPoints, image_proc_img = getEllipseLineIntersection(Ellipse, lines_seg, image_proc_img)
 
-    return intersectPoints
+    return intersectPoints, image_proc_img
 
 def smoothEllipse(tresh):
     # open -> erode then dilate
@@ -195,73 +203,87 @@ def smoothEllipse(tresh):
     return pre_processing_ellipse
 
 def findSectorLines(edged, image_proc_img, Ellipse):
-    
-    x_line = cv2.HoughLines(edged, 1, np.pi / 160, 90,100)
-    
-    horizontal_lines = []
-    vertical_lines = []
-    intersectLines_XY_coord = []
-    
-    fixed_horizontal_slope= 0
-    fixed_vertical_slope= sys.maxsize
-    
-    filtered_Lines = []
-    horizontal_temp = 75
-    vertical_temp = 75
+    original = image_proc_img.copy()
+    createTrackbarsForHoughline()
+    while True:
+        s = cv2.getTrackbarPos('1 -> Done', 'houghlines')
+        if s == 1:
+            cv2.destroyAllWindows()
+            break
 
-    for line in x_line:
-        # rho, theta = line[0]
-        rho, theta = line[0]
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a * rho
-        y0 = b * rho
-        x1 = int(x0 + 2000 * (-b))
-        y1 = int(y0 + 2000 * (a))
-        x2 = int(x0 - 2000 * (-b))
-        y2 = int(y0 - 2000 * (a))
-        slope = (y1 - y0) / (x1 - x0)
-        c= y0-slope
+        accuracy = cv2.getTrackbarPos('accuraccy', 'houghlines')
+        votes = cv2.getTrackbarPos('votes', 'houghlines')
+        image_proc_img = original.copy()
+        houghlines = cv2.HoughLines(edged, 1, np.pi / accuracy, votes,100)
         
-        distance = (slope * Ellipse.x - Ellipse.y +c) / (math.sqrt(slope**2 + 1))
-        if distance < 300:
-            angle_for_vertical_line =  abs(math.degrees(math.atan((slope-fixed_horizontal_slope)/(1+ (slope * fixed_horizontal_slope)))))
-            angle_for_horizontal_line = abs(math.degrees(math.atan((slope-fixed_vertical_slope)/(1+ (slope * fixed_vertical_slope)))))
-            
-            
-            cv2.line(image_proc_img, (x1,y1),(x2, y2), (255, 0, 255),1) 
-            if angle_for_vertical_line > angle_for_horizontal_line and angle_for_vertical_line > horizontal_temp:
+        horizontal_lines = []
+        vertical_lines = []
+        intersectLines_XY_coord = []
+        
+        fixed_horizontal_slope= 0
+        fixed_vertical_slope= sys.maxsize
+        
+        filtered_Lines = []
+        horizontal_temp = 75
+        vertical_temp = 75
+        try:
+            for line in houghlines:
+                # rho, theta = line[0]
+                rho, theta = line[0]
+                a = np.cos(theta)
+                b = np.sin(theta)
+                x0 = a * rho
+                y0 = b * rho
+                x1 = int(x0 + 2000 * (-b))
+                y1 = int(y0 + 2000 * (a))
+                x2 = int(x0 - 2000 * (-b))
+                y2 = int(y0 - 2000 * (a))
+                slope = (y1 - y0) / (x1 - x0)
+                c= y0-slope
+                
+                distance = (slope * Ellipse.x - Ellipse.y +c) / (math.sqrt(slope**2 + 1))
+                if distance < 300:
+                    angle_for_vertical_line =  abs(math.degrees(math.atan((slope-fixed_horizontal_slope)/(1+ (slope * fixed_horizontal_slope)))))
+                    angle_for_horizontal_line = abs(math.degrees(math.atan((slope-fixed_vertical_slope)/(1+ (slope * fixed_vertical_slope)))))
+                    
+                    
+                    cv2.line(image_proc_img, (x1,y1),(x2, y2), (255, 0, 255),1) 
+                    if angle_for_vertical_line > angle_for_horizontal_line and angle_for_vertical_line > horizontal_temp:
 
-                horizontal_temp = angle_for_vertical_line
-                vertical_lines.append([(x1,y1),(x2,y2)])
-                filtered_Lines.append([(x1,y1),(x2,y2)])
-            elif angle_for_vertical_line < angle_for_horizontal_line and angle_for_horizontal_line > vertical_temp:
-                vertical_temp = angle_for_horizontal_line
-                horizontal_lines.append([(x1,y1),(x2,y2)])
-                filtered_Lines.append([(x1,y1),(x2,y2)])
+                        horizontal_temp = angle_for_vertical_line
+                        vertical_lines.append([(x1,y1),(x2,y2)])
+                        filtered_Lines.append([(x1,y1),(x2,y2)])
+                    elif angle_for_vertical_line < angle_for_horizontal_line and angle_for_horizontal_line > vertical_temp:
+                        vertical_temp = angle_for_horizontal_line
+                        horizontal_lines.append([(x1,y1),(x2,y2)])
+                        filtered_Lines.append([(x1,y1),(x2,y2)])
+                    
+            degree_btw_both_lines = 60
+            h = 0
+            v = 0
+            for x_line in horizontal_lines:
+                (x0,y0), (x1,y1) = x_line
+                slope_x = (y1 - y0) / (x1 - x0)
+                for y_line in vertical_lines:
+                    (x2,y2), (x3,y3) = y_line
+                    
+                    slope_y = (y3 - y2) / (x3 - x2)
+                    try:
+                        angle_between =  abs(math.degrees(math.atan((slope_x-slope_y)/(1+ (slope_x * slope_y)))))
+                        if  angle_between > degree_btw_both_lines:
+                            degree_btw_both_lines = angle_between
+                            h = [(x0,y0),(x1,y1)]
+                            v = [(x2,y2),(x3,y3)]
+                    except:
+                        continue
             
-    degree_btw_both_lines = 60
-    h = 0
-    v = 0
-    for x_line in horizontal_lines:
-        (x0,y0), (x1,y1) = x_line
-        slope_x = (y1 - y0) / (x1 - x0)
-        for y_line in vertical_lines:
-            (x2,y2), (x3,y3) = y_line
-            
-            slope_y = (y3 - y2) / (x3 - x2)
-            try:
-                angle_between =  abs(math.degrees(math.atan((slope_x-slope_y)/(1+ (slope_x * slope_y)))))
-                if  angle_between > degree_btw_both_lines:
-                    degree_btw_both_lines = angle_between
-                    h = [(x0,y0),(x1,y1)]
-                    v = [(x2,y2),(x3,y3)]
-            except:
-                continue
+            cv2.line(image_proc_img, h[0],h[1], (0, 0, 255),2)  
+            cv2.line(image_proc_img, v[0],v[1], (0, 255, 0),2)  
+        except:
+            print("no lines found")    
         
-    cv2.line(image_proc_img, h[0],h[1], (0, 0, 255),2)  
-    cv2.line(image_proc_img, v[0],v[1], (0, 255, 0),2)  
-    
+        cv2.imshow('lines detected', image_proc_img)
+        cv2.waitKey(1)
     # if len(intersectLines) == 2:
     #     x, y = intersection(intersectLines[0], intersectLines[1])
     # else:
