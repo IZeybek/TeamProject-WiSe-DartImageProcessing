@@ -40,7 +40,6 @@
           >
             <dart-scorer
               :dartScores="dartScores"
-              :round="round"
               :websocket="websocket"
             ></dart-scorer>
             <div class="justify-center" style="text-align: center">
@@ -52,6 +51,7 @@
                 dark
                 >done?</v-btn
               >
+              
               <v-btn
                 style="margin: 5px"
                 v-show="!win"
@@ -60,6 +60,7 @@
                 dark
                 >reset?</v-btn
               >
+              
               <v-btn v-show="win" @click="init()" small dark>New Game?</v-btn>
             </div>
           </div>
@@ -75,6 +76,7 @@ import PlayerList from "./PlayerList.vue";
 import CurrentPlayer from "./CurrentPlayer.vue";
 import DartScorer from "./DartScorer.vue";
 import Win from "./Win.vue";
+import getRound,{setRound} from "../assets/data/gameState";
 
 export default {
   name: "playDart",
@@ -87,11 +89,12 @@ export default {
     return {
       record: [],
       win: false,
-      serverscore: 0,
+      serverscore:0,
+      interim_result:0,
       isHidden: false,
       players: [],
       correct: "",
-      round: 0,
+      round:0,
       playerCount: 0,
       websocket: null,
       pointsweb: [],
@@ -130,7 +133,7 @@ export default {
   },
   methods: {
     resetCurrentPlayerAttempts() {
-      this.round = 0;
+      setRound(0);
       for (let i = 0; i < 3; i++) {
         this.dartScores[i].score = 0;
       }
@@ -160,7 +163,7 @@ export default {
           request: 13,
         })
       );
-      this.round = 0;
+      setRound(0);
       //this.playerCount = (this.playerCount + 4) % this.players.length;
       //this.currentPlayer = this.players[0];
       //let temp_player = this.currentPlayer
@@ -169,7 +172,7 @@ export default {
     },
 
     init() {
-      this.round = 0;
+      setRound(0);
       const darts = [];
 
       for (let i = 0; i < 3; i++) {
@@ -191,6 +194,10 @@ export default {
         score: this.initialScore || 301,
         throws: [],
       }));
+    this.currentPlayer = this.players[0];
+    let temp_player = this.players.shift();
+    this.players.push(temp_player);
+      
     },
     debug() {
       console.log(this.isHidden);
@@ -210,6 +217,10 @@ export default {
       } else {
         alert("try again");
       }
+    },
+    calculate_interim_score(score) {
+      var a = Number.isInteger(score)
+      this.interim_result = this.interim_result+a
     },
     sendServerNextPlayerStatus() {
       this.websocket.send(
@@ -234,21 +245,25 @@ export default {
       };
       this.websocket.onmessage = (e) => {
         let content = JSON.parse(e.data);
-        console.log(content);
+        console.log(content)
+        //console.log(content);
         let number = content.request;
         if (number == 1) {
           // 404
-          this.dartScores[this.round].score = content.value;
-          console.log("1." + content.value);
+          console.log("futrre "+ getRound())
+          this.dartScores[getRound()].score = content.value;
+          console.log("1." + content.value + "WElcher Pfeil: " + getRound());
 
           // this.round++
         } else if (number == 2) {
           console.log("2." + content);
           this.resetCurrentPlayerAttempts()
         } else if (number == 14) {
-          this.round = content.value;
+          setRound(content.value);
+          
+          //this.$round = content.value;
 
-          console.log("recieved 14 roundcounter: ", content.value);
+          //console.log("recieved 14 roundcounter: ", content.value);
         } else if (number == 15) {
           this.serverState = content.value;
 
