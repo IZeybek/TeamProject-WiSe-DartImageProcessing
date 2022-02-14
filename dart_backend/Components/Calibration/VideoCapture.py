@@ -116,7 +116,7 @@ class VideoStream:
         array    
             frame returns videoFrame as an array.
         """
-        time.sleep(2/self.fps)
+        time.sleep(3/self.fps)
         # return the frame most recently read
         return self.grabbed, self.frame
 

@@ -137,7 +137,9 @@ export default {
       for (let i = 0; i < 3; i++) {
         this.dartScores[i].score = 0;
         this.dartScores[i].next = false;
+        this.dartScores[i].thrown = false;
       }
+      this.dartScores[0].next = true;
       this.websocket.send(
         JSON.stringify({
           request: 13,
