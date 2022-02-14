@@ -54,23 +54,43 @@
         placeholder="enter text"
         v-on:keyup.enter="onEnter(index)"
       ></v-text-field>
+      
 
       <v-divider></v-divider>
+    </div>
+    <div class="justify-center" style="text-align: center">
+    <v-btn
+                style="margin: 5px"
+                small
+                dark
+                >{{reversedMessage}}</v-btn
+                >
     </div>
   </div>
 </template>
 
 <script>
+import getRound,{setRound} from "../assets/data/gameState";
 export default {
   name: "DartScorer",
-  props: ["dartScores", "round", "websocket"],
+  props: ["dartScores", "websocket"],
   data: function () {
     return {
       showPencil: false,
       showInput: false,
       corrected: 0,
+      interim_score:0,
       roundOffset: 0,
     };
+  },
+  computed: {
+    reversedMessage: function () {
+      this.interim_score = 0;
+      for(var i = 0; i<3;i++) {
+        this.interim_score+=this.dartScores[i].score
+      }
+      return this.interim_score
+    }
   },
   created() {
     this.$root.$refs.DartScorer = this;
@@ -83,20 +103,28 @@ export default {
   },
   methods: {
     deleteScore(index) {
+      console.log("vor "+ this.roundOffset)
+      console.log("vor "+ getRound())
       this.dartScores[index].score = 0;
+      setRound(index + 1);
       this.websocket.send(
         JSON.stringify({
           request: 10,
         })
       );
       this.roundOffset += 1;
+      console.log("nach "+ this.roundOffset)
+      console.log("nach "+ getRound())
+    },
+    berechnen(score) {
+      this.abc+=score
     },
     getTurn(index) {
-      if (this.round == 0) {
-        this.roundOffset = 0;
+      if (getRound() == 0) {
+        this.$roundOffset = 0;
       }
       if (this.dartScores[index].score == 0) {
-        if (this.round + this.roundOffset == index) {
+        if (getRound() + this.roundOffset == index) {
           return "yellow";
         }
         return "lightgray";

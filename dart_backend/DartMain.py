@@ -1,5 +1,6 @@
 import Components.OneCameraLoop as oneCamera
 import Components.TwoCameraLoop as dualCamera
+import Components.TwoCameraLoop_Soni as dualCamera1
 import Components.TestingSkripts as test
 import Components.Webserver.websocket as websocket
 from Components.Calibration.VideoCapture import getVideoStream
@@ -27,6 +28,11 @@ if __name__ == "__main__":
         dualCamera.test_dual_camera_loop(websocket)
     elif mode == "Dual_Camera_Loop":
         main_loop = threading.Thread(target=dualCamera.dual_camera_loop, args=(websocket,))
+        main_loop.start()
+        # start websocket
+        websocket.start_server("localhost", 9000)
+    elif mode == "Dual_Camera_Loop_Soni":
+        main_loop = threading.Thread(target=dualCamera1.test_dual_camera_loop, args=(websocket,))
         main_loop.start()
         # start websocket
         websocket.start_server("localhost", 9000)
