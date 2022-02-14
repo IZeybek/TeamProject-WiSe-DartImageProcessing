@@ -12,8 +12,6 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
     reference_image_L = snapshot_cam_L.copy()
     reference_image_R = snapshot_cam_R.copy()
 
-    # 
-    # TODO: add new Calibration instead of loading
     if calibrateOrRead == "readCal":
         calData_L, draw_L, calData_R, draw_R = readCalibrationData('Calibration_standard_output/calibrationData_L.pkl', 'Calibration_standard_output/calibrationData_R.pkl')
     elif calibrateOrRead == 'newCal':
@@ -21,13 +19,14 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
         
     websocket.CALIBRATION_DONE.set()
     
-    
     # main Loop
     transformed_image_L = reference_image_L
     transformed_image_R = reference_image_R
     while True:
-        # calibrate only if websocket thread Event is not set
+        # handle dart missed message
         websocket.send_missed_counter()
+
+        # calibrate only if websocket thread Event is not set
         if not websocket.CALIBRATION_DONE.is_set():
             print("calibrating...")
             try:
@@ -51,7 +50,7 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
         if websocket.IMAGE_COUNT == 0:
             reference_image_L = snapshot_cam_L.copy()
             reference_image_R = snapshot_cam_R.copy()
-            test_image_idx = 0
+
         websocket.Global_LOCK.release()
 
         camRGB_L, camRGB_R = waitForStabilizedImage(videoStream_L, videoStream_R, websocket)

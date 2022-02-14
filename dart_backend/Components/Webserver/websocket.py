@@ -96,7 +96,6 @@ async def handle_requests(websocket, path):
                 # handle new calibration
                 set_Orientation(left_right)
                 CALIBRATION_DONE.clear()
-                # TODO: start calibration
                 CALIBRATION_DONE.wait()
                 json_response = json.dumps({"request": 2})
                 await websocket.send(json_response)
