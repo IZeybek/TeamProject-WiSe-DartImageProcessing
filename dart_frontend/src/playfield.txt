@@ -1,0 +1,108 @@
+<template>
+    <div id="shootout">
+        <div class="head">
+            <div class="record">
+                <h1 v-if="!isHidden">Hide me on click event!</h1>
+                <input v-for="index in players.length" v-model="players[index - 1]" :key="index">
+                <div @click="undo();isHidden = true">{{ record[0] | totext }}</div>
+                <div @click="undo()">{{ record[1] | totext }}</div>
+                <div @click="undo()">{{ record[2] | totext }}</div>
+            </div>
+        </div>
+    </div>
+</template>
+
+
+<template>
+            <div class="record">
+                <h1 v-if="!isHidden">Hide me on click event!</h1>
+                <input v-for="index in players.length" v-model="players[index - 1]" :key="index">
+                <div @click="undo();isHidden = true">{{ record[0] | totext }}</div>
+                <div @click="undo()">{{ record[1] | totext }}</div>
+                <div @click="undo()">{{ record[2] | totext }}</div>
+            </div>
+</template>
+
+<script>
+
+export default {
+    name: 'playfield',
+    props: ['playernames', 'initialSconre'],
+    data: function() {
+        return{
+            record:[], 
+            serverscore:0,
+            isHidden:false,
+        }
+    },
+    filters:{
+        totext(serverscore) {
+            if (serverscore == 0) {
+                return ''
+            }
+            if(serverscore == 0) {
+                return serverscore
+            }
+        }
+    }
+}
+
+</script>
+
+
+
+
+
+export default {
+  name: 'Home',
+  methods: {
+    createWebsocket() {
+      window.websocket.onopen = () => {
+        window.websocket.send(JSON.stringify({
+          "connected": {
+            "connect": "successful"
+          }
+        }))
+        console.log("Connected to Websocket");
+        window.onclose = function () {
+          console.log('Connection with Websocket Closed!');
+        };
+        window.onerror = function (error) {
+          console.log('Error in Websocket Occured: ' + error);
+        };
+      }
+      window.websocket.onclose = function(event) {
+        console.log("WebSocket is closed now.");
+      };
+      window.websocket.onmessage = (e) => {
+        if (typeof e.data === "string") {
+          let json = JSON.parse(e.data);
+          console.log(e.data)
+          if (Object.keys(json)[0] === "status") {
+            this.status = json.status
+          } else if (Object.keys(json)[1] === "lobby") {
+            this.player = json.player
+            this.lobby.participants = json.lobby
+          } else if (Object.keys(json)[0] === "lobby") {
+            this.lobby.participants = json.lobby
+          } else {
+            this.size = json.matchfieldSize;
+            this.fields = json.matchField
+            this.currentPlayerIndex = json.currentPlayerIndex
+            this.currentPlayer = json.currentPlayer
+            this.gameStatus = json.gameStatus
+            this.playerListBufferBlue = json.playerListBufferBlue
+            this.playerListBufferRed = json.playerListBufferRed
+            this.border = json.border
+          }
+        }
+      }
+    }
+  },
+  created() {
+    this.createWebsocket();
+  }
+}
+
+</script>
+
