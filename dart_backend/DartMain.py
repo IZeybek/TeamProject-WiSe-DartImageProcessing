@@ -7,7 +7,7 @@ import threading
 import time
 
 if __name__ == "__main__":
-    mode = "Calibrate-right"
+    mode = "Dual_Camera_Loop"
 
     # Single Camera Mode
     if mode == "Test_One_Camera_Loop":
