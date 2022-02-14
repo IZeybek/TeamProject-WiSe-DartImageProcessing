@@ -5,6 +5,7 @@ import threading
 
 CALIBRATION_DONE = threading.Event()
 ROUND_DONE = threading.Event()
+COUNTER_CHANGED = threading.Event()
 IMAGE_COUNT = 0
 CAL_ORIENTATION = ''
 WEBSOCKET = None
@@ -37,6 +38,15 @@ def send_counter():
     send_changes({"request": 14, "value": IMAGE_COUNT})
     print("send current counter")
     Global_LOCK.release()
+    
+def send_missed_counter():
+    global IMAGE_COUNT, Global_LOCK, COUNTER_CHANGED
+    if COUNTER_CHANGED.is_set:
+        Global_LOCK.acquire()
+        send_changes({"request": 14, "value": IMAGE_COUNT})
+        COUNTER_CHANGED.clear()
+        print("send current counter")
+        Global_LOCK.release()
 
     
 def send_stillLoading(msg):
@@ -78,7 +88,8 @@ async def handle_requests(websocket, path):
                 # handle missed dart
                 
                 increase_image_count()
-                print("Noticed missed Dart - Data corrected")
+                COUNTER_CHANGED.set()
+                print("Noticed missed Dart - Data corrected - and send it to client")
 
             elif json_message["request"] == 11:
                 left_right = json_message["value"]

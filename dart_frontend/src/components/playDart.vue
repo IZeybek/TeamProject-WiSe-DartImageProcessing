@@ -136,6 +136,7 @@ export default {
       setRound(0);
       for (let i = 0; i < 3; i++) {
         this.dartScores[i].score = 0;
+        this.dartScores[i].next = false;
       }
       this.websocket.send(
         JSON.stringify({
@@ -157,7 +158,10 @@ export default {
       }
       for (let i = 0; i < 3; i++) {
         this.dartScores[i].score = 0;
+        this.dartScores[i].thrown = false;
+        this.dartScores[i].next = false;
       }
+      this.dartScores[0].next = true;
       this.websocket.send(
         JSON.stringify({
           request: 13,
@@ -176,17 +180,9 @@ export default {
       const darts = [];
 
       for (let i = 0; i < 3; i++) {
-        darts.push({ score: 0 }); // some changes for testing
-        // if (i == 0) {
-        //   darts.push({
-        //     score: 5,
-        //   });
-        // } else {
-        //   darts.push({
-        //     score: -1,
-        //   });
-        // }
+        darts.push({ score: 0, next: false, thrown: false }); 
       }
+      darts[0].next = true;
       this.dartScores = darts;
       this.win = false;
       this.players = this.playernames.map((player) => ({
@@ -251,7 +247,11 @@ export default {
         if (number == 1) {
           // 404
           console.log("futrre "+ getRound())
-          this.dartScores[getRound()].score = content.value;
+          const round = getRound()
+          this.dartScores[round].score = content.value;
+          this.dartScores[round].thrown = true;
+          this.dartScores[round].next = false;
+          round < 2 ? this.dartScores[round + 1].next = true : '';
           console.log("1." + content.value + "WElcher Pfeil: " + getRound());
 
           // this.round++

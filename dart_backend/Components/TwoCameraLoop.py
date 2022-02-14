@@ -27,6 +27,7 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
     transformed_image_R = reference_image_R
     while True:
         # calibrate only if websocket thread Event is not set
+        websocket.send_missed_counter()
         if not websocket.CALIBRATION_DONE.is_set():
             print("calibrating...")
             try:
