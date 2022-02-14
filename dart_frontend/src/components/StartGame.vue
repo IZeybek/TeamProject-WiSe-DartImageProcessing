@@ -5,16 +5,34 @@
       <v-col cols="12" sm="12">
         <v-card-actions v-if="game == 0" class="justify-center">
           <v-sheet class="mt-10" rounded="lg" max-width="300" min-height="350">
-            <div class="px-4 py-4">
+            <div class="px-4 py-4" style="margin-top: 20px">
               <div  class=".justify-start">
-                <v-card-actions class="justify-center" max-width="250">
+                  
+                  <v-card-actions class="justify-center" max-width="250">
                   <v-text-field
+                    class="mt-n6"
+                    v-model="score"
+                    label="max_score"
+                    outlined
+                    style="margin-top: 20px"
+                  ></v-text-field>
+                  
+                </v-card-actions>
+                  
+                  <v-card-actions
+                  class="justify-center"
+                  max-width="250"
+                >
+                  <v-text-field
+                  
                     class="mt-n6"
                     v-model="player_count"
                     label="how many players?"
                     outlined
+                    hide-details
                   ></v-text-field>
-                </v-card-actions>
+                  </v-card-actions>
+                  <v-divider></v-divider>
                 <v-card-actions
                   v-for="(item, index) in reversedMessage"
                   :key="index"
@@ -25,16 +43,10 @@
                     v-model="item.name"
                     label="enter playerName"
                     outlined
+                    hide-details
                   ></v-text-field>
                 </v-card-actions>
-                <v-card-actions class="justify-center" max-width="250">
-                  <v-text-field
-                    class="mt-n6"
-                    v-model="score"
-                    label="max_score"
-                    outlined
-                  ></v-text-field>
-                </v-card-actions>
+                
                 <v-card-actions class="justify-center">
                   <v-btn
                     class="justify-center"

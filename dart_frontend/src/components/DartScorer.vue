@@ -97,18 +97,19 @@ export default {
   },
   methods: {
     async deleteScore(index) {
-      console.log("vor " + this.roundOffset);
-      console.log("vor " + getRound());
-      this.dartScores[index].score = 0;
-      this.dartScores[index].next = false;
-      this.dartScores[index].thrown = true;
-      index < 2 ? (this.dartScores[index + 1].next = true) : "";
+      if (getRound() + this.roundOffset == index) {
+        this.dartScores[index].score = 0;
+        this.dartScores[index].next = false;
+        this.dartScores[index].thrown = true;
 
-      await this.websocket.send(
-        JSON.stringify({
-          request: 10,
-        })
-      );
+        index < 2 ? (this.dartScores[index + 1].next = true) : "";
+
+        await this.websocket.send(
+          JSON.stringify({
+            request: 10,
+          })
+        );
+      }
     },
     getTurn(index) {
       if (getRound() == 0) {
