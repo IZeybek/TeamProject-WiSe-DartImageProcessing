@@ -164,7 +164,7 @@ def getSectorAngle(i, calData):
 def getNormilizedBoard(img, calData):
         center = 400
         for rings in calData.ring_radius:
-            cv2.circle(img, (center, center), rings, (255, 0, 0), 2)  # outside double    
+            cv2.circle(img, (center, center), rings, (255, 0, 0), 1)  # outside double    
 
         for i in range(0,20):
             sectorAngle = getSectorAngle(i,calData)
@@ -172,7 +172,7 @@ def getNormilizedBoard(img, calData):
             p2 = center + int(calData.ring_radius[1] * math.sin(sectorAngle))
             cv2.line(img, (p1, p2), (
                 int(center + calData.ring_radius[5] * math.cos(sectorAngle)),
-                int(center + calData.ring_radius[5] * math.sin(sectorAngle))), (255, 0, 0), 2)
+                int(center + calData.ring_radius[5] * math.sin(sectorAngle))), (255, 0, 0), 1)
 
         return img
 

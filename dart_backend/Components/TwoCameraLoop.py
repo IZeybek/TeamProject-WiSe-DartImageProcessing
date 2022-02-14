@@ -134,7 +134,6 @@ def dual_camera_loop(websocket, calibrateOrRead="readCal"):
             
         websocket.send_stillLoading("ready")
 
-        time.sleep(2)
 
 
 def waitForStabilizedImage(videoStream_L,videoStream_R,websocket):
