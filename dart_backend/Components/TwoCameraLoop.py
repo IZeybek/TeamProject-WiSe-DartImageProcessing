@@ -149,23 +149,22 @@ def waitForStabilizedImage(videoStream_L,videoStream_R,websocket):
     mse_L = 45
     counter = 0
     while mse_L > 40 or mse_R > 40:
-     
-        print("shaking")
+
+        if counter > 1:
+            print("shaking")
         
-        time.sleep(2)
-        
-        counter += 1
-        if counter == 2:
+        if counter == 1:
             websocket.send_stillLoading("loading")
         _L, new_L = videoStream_L.read()
         _R, new_R = videoStream_R.read()
         snapshot_cam_L = new_L.copy()
         snapshot_cam_R = new_R.copy()
-        
         mse_L, _, _ = process_images(temp_reference_L.copy(), snapshot_cam_L)
         mse_R, _, _ = process_images(temp_reference_R.copy(), snapshot_cam_R)
         temp_reference_L = new_L.copy()
         temp_reference_R = new_R.copy()
+        counter += 1
+        
     
     return snapshot_cam_L, snapshot_cam_R
 

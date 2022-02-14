@@ -28,6 +28,8 @@ class VideoStream:
         # initialize the video camera stream and read the first frame
         # from the stream
         self.stream = cv2.VideoCapture(src)
+        self.fps = self.stream.get(cv2.CAP_PROP_FPS)
+        print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(self.fps))
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
         self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
         (self.grabbed, self.frame) = self.stream.read()
@@ -61,9 +63,44 @@ class VideoStream:
             if self.stopped:
                 return
 
-            # otherwise, read the next frame from the stream
+            #self.debug_fps()
+
             (self.grabbed, self.frame) = self.stream.read()
-            
+
+    def debug_fps(self):
+        # otherwise, read the next frame from the stream
+        num_frames = 30;
+        # Grab a few frames
+        
+        print("Capturing {0} frames".format(num_frames))
+
+        # Start time
+
+        start = time.time()
+
+        # Grab a few frames
+
+        for i in range(0, num_frames) :
+
+            ret, frame = self.stream.read()
+
+        # End time
+
+        end = time.time()
+
+        # Time elapsed
+
+        seconds = end - start
+
+        print ("Time taken : {0} seconds".format(seconds))
+
+        # Calculate frames per second
+
+        fps  = num_frames / seconds
+
+        print("Estimated frames per second : {0}".format(fps))
+    
+    
     def initRead(self):
         
         time.sleep(4)
@@ -79,6 +116,7 @@ class VideoStream:
         array    
             frame returns videoFrame as an array.
         """
+        time.sleep(2/self.fps)
         # return the frame most recently read
         return self.grabbed, self.frame
 
