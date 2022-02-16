@@ -34,16 +34,17 @@ def calc_image_difference(image_a, image_b):
     grayB = cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY)
 
     # calc the difference between the two greyscale images to detect the thrown dart
-    ssim_score, diff = calc_ssim(grayA, grayB)
     mse = mean_squared_error(grayA, grayB)
+    ssim_score, diff = calc_ssim(grayA, grayB)
+
 
     # threshold the difference image to get a clear dart
-    thresh = cv2.threshold(diff, 0, 255,
-                           cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+    thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 
     # now get rid of black pixels in the dart
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+
     # thresh = cv2.GaussianBlur(thresh, (5, 5), -1)
     if ssim_score == 1:
         return grayA, grayB, thresh, diff, -1
@@ -246,7 +247,7 @@ def process_images(image_a, image_b):
     """
     gray_a, gray_b, thresh, diff, mse = calc_image_difference(image_a, image_b)
     if mse == -1:
-        return  mse, None, None
+        return mse, None, None
     dart_contour, dart_contour_points = get_dart_contour(thresh)
     x, y, slope, p_line_r, p_line_l = calc_object_lines(dart_contour, gray_a.shape[1])
     points = calc_bounding_box_intersection(dart_contour_points[0], dart_contour_points[1], (x, y), slope)
