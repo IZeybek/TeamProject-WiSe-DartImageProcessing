@@ -8,7 +8,7 @@ import threading
 import time
 
 if __name__ == "__main__":
-    mode = "Dual_Camera_Loop"
+    mode = "Calibrate-right"
 
     # Single Camera Mode
     if mode == "Test_One_Camera_Loop":
@@ -41,13 +41,13 @@ if __name__ == "__main__":
     # Testing Skripts
     elif mode == "Calibrate-left":
         
-        videoStream_L, snapshot_cam_L = getVideoStream(src=1)
+        videoStream_L, snapshot_cam_L = getVideoStream(src=0)
         _,image = videoStream_L.read()
         test.test_calibration_Left(image.copy())
         
     elif mode == "Calibrate-right":
         
-        videoStream_R, snapshot_cam_R = getVideoStream(src=0)
+        videoStream_R, snapshot_cam_R = getVideoStream(src=1)
         _,image = videoStream_R.read()
         test.test_calibration_Right(image.copy())
         

@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 # https://www.geeksforgeeks.org/changing-the-contrast-and-brightness-of-an-image-using-python-opencv/
 
@@ -134,3 +135,24 @@ if __name__ == '__main__':
 # a key event infinitely  or for delay
 # milliseconds, when it is positive.
 cv2.waitKey(0)
+
+def brighten(im):
+    return brighten_with_lut(im, get_lut(256))
+
+def brighten_with_lut(img, lut):
+    imgCopy = np.copy(img)
+    # faster and more python like way than iterating over a range and accessing each pixel
+    imgCopy[:] = [lut[pix] for pix in imgCopy]
+    return imgCopy
+
+
+def get_lut(k=256):
+    # create lut-table
+    # which only brightens the darker pixel values (e.g. < 200)
+    # bright pixel values should not change that much
+
+    # check clamping
+
+    lut = np.arange(0, k, 1)
+    lut[100:] += 200
+    return np.clip(lut, 0, 255)

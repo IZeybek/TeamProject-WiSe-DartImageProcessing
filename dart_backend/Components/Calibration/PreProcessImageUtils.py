@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from .Contrast import applyContrast
+from .Contrast import applyContrast,brighten
 from .EllipseUtils import smoothEllipse
 
 def locateRedSpots(img):
@@ -42,43 +42,40 @@ def locateRedSpots(img):
     kernel = np.ones((9,9), np.uint8) 
     thresh2 = cv2.morphologyEx(mask, cv2.MORPH_ERODE, kernel)
    
-    cv2.imshow("result-mask-tresh", thresh2)
+    cv2.imshow("result-mask-thresh", thresh2)
     
     
-def getCanny(tresh):
-    edged_tresh = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
-    edged_tresh = cv2.morphologyEx(edged_tresh, cv2.MORPH_OPEN , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
-    edged_tresh = cv2.GaussianBlur(edged_tresh, (5, 5), -1)
-    cv2.imshow("blurrEdge", edged_tresh)
-    edged = cv2.Canny(edged_tresh, 250, 255)  # imCal
+def getCanny(thresh):
+    edged_thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    edged_thresh = cv2.morphologyEx(edged_thresh, cv2.MORPH_OPEN , cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    edged_thresh = cv2.GaussianBlur(edged_thresh, (5, 5), -1)
+    cv2.imshow("blurrEdge", edged_thresh)
+    edged = cv2.Canny(edged_thresh, 250, 255)  # imCal
 
     cv2.imshow("canny", edged)
     return edged
 
-def applyFilters(image_proc_img):
-    cv2.imshow("original", image_proc_img)
-    
-    image_proc_img = applyContrast(image_proc_img, 300, 175)
-    cv2.imshow("contrast", image_proc_img)
-    blurred = cv2.GaussianBlur(image_proc_img, (3, 3), -1)
-    # gray = cv2.cvtColor(blurred, cv2.COLOR_RGB2GRAY)
-    # cv2.imshow("1-gray", gray)
-    
-    # return the edged image
+def getthresh(original):
+    cv2.imshow("original", original)
+    original_copy = original.copy()
+    brightend = brighten(original_copy)
+    cv2.imshow("1-brightened image", brightend)
+    blurred = cv2.GaussianBlur(brightend, (3, 3), -1)
+    cv2.imshow("1.1-blurred image", blurred)
     
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     cv2.imshow("2-hsv", hsv)
     
-    h, s, hsv = cv2.split(hsv)
+    h, s, v = cv2.split(hsv)
     
-    ret, tresh = cv2.threshold(hsv, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    cv2.imshow("3-treshold-hsv", tresh)
-    return tresh
+    ret, thresh = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    cv2.imshow("3-threshold-hsv", thresh)
+    return thresh
  
-def preProcessImage(image_proc_img):
-    tresh = applyFilters(image_proc_img)
+def preProcessImage(original):
+    thresh = getthresh(original)
 
-    pre_processed_lines = getCanny(tresh)
-    pre_processed_ellipse = smoothEllipse(tresh)
+    pre_processed_lines = getCanny(thresh)
+    pre_processed_ellipse = smoothEllipse(thresh)
 
     return pre_processed_lines, pre_processed_ellipse

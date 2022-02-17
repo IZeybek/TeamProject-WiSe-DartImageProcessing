@@ -194,11 +194,11 @@ def getIntersectionPointsFromEllipse(image_proc_img, pre_processed_lines, pre_pr
 
     return intersectPoints, image_proc_img
 
-def smoothEllipse(tresh):
+def smoothEllipse(thresh):
     # open -> erode then dilate
     # close -> dilate then erode
     # smooth out board to get an even ellipse
-    pre_processing_ellipse = cv2.morphologyEx(tresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    pre_processing_ellipse = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
     pre_processing_ellipse = cv2.morphologyEx(pre_processing_ellipse, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17)))
     return pre_processing_ellipse
 
@@ -307,7 +307,7 @@ def findEllipse(edged, image_proc_img):
     maxThresE = 150000
     for cnt in contours:
         print(cv2.contourArea(cnt));
-        try:  # threshold critical, change on demand?
+        try:
             area = cv2.contourArea(cnt);
             if minThresE < area < maxThresE:
                 
@@ -316,11 +316,7 @@ def findEllipse(edged, image_proc_img):
                 x, y = ellipse[0]
                 a, b = ellipse[1] 
                 angle = ellipse[2]
-                # y += 4
-                # x += 1
-                a -= 2
-                b -= 2
-                # cv2.drawContours(image_proc_img, cnt, -1, (0, 255, 0), 2)
+                cv2.drawContours(image_proc_img, cnt, -1, (0, 255, 0), 7)
                 
                 a = a / 2
                 b = b / 2
@@ -333,7 +329,6 @@ def findEllipse(edged, image_proc_img):
                 Ellipse.x = x
                 Ellipse.y = y
                 Ellipse.angle = angle
-        # corrupted file
         except:
             continue
     return Ellipse, image_proc_img
